@@ -84,7 +84,23 @@ content:
           #   icon: fab fa-github
           #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
         quote: >
-          This is the culmination of my work as a Research Associate at the Indian Institute of Technology, Delhi.
+          This is a subset of "Optimisation of power supply and demand parameters"
+        description: | # this will include new lines to allow paragraphs
+          I worked on developing an easy to install module that can control up-to 4 appliances over the internet. I used TRIACS and designed a circuit using optocouplers and NodeMCU in order to switch the appliances. I also created an android application using <mark>MIT App Inventor</mark> and integrated everything using <mark>Google Firebase</mark>.
+          
+      - layout: top-middle
+        title: Disruption of data in microgrid communication
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          S. Rath, D. Pal, P. S. Sharma and B. K. Panigrahi, "A Cyber-Secure Distributed Control Architecture for Autonomous AC Microgrid," in IEEE Systems Journal, doi: 10.1109/JSYST.2020.3020968.
         description: | # this will include new lines to allow paragraphs
           I worked on optimising the power supply and demand parameters using first <mark>Gurobi</mark> and the genetic algorithms using <mark>JAVA</mark>. My work was mostly programming the algorithms developed by my professors and supervisors (PhD students).
 
