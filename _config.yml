@@ -12,7 +12,7 @@ email: pss242@cornell.edu
 # website: https://parthssharma.github.io/
 
 # Dark Mode (true/false/never)
-darkmode: true
+darkmode: false
 
 # Social links
 # twitter_username: facespics
@@ -128,9 +128,21 @@ content:
           #   icon: fab fa-github
           #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
         quote: >
-          This project was a part of my senior thesis during my undergraduate studies.
+          This project was a part of my junior thesis during my undergraduate studies.
         description: | # this will include new lines to allow paragraphs
-          During the second last semester of my undergraduated studies, I created a Quadpod robot that can be controlled wirelessly 
+          During the second last semester of my undergraduated studies, I created a Quadpod robot that can be controlled wirelessly using hand gestures. It consists of two modules: the Quadpod and the Controller. The controller has an accelerometer and a gyroscope which sends the orientation of the hand over to the Quadpod via Bluetooth and the Quadpod reacts accordingly.
+          
+      - layout: left
+        title: Music Visualizer on LED Strip
+        link: https://www.youtube.com/watch?v=TXOCmruMZ4o
+        link_text: Video demonstration of the project
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This is a hobby project I worked on.
+        description: | # this will include new lines to allow paragraphs
+          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that 
 
   - title: Experience # Title for the section
     layout: list # Type of content section (list/text)
