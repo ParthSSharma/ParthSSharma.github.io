@@ -53,6 +53,34 @@ about_content: | # this will include new lines to allow paragraphs
   I am most skilled in: <mark>Embedded Systems</mark> and <mark>Eating Pizza</mark>
 
 content:
+    - title: Education # Title for the section
+    layout: list # Type of content section (list/text)
+    content:
+      - layout: left
+        title: Cornell University
+        caption: 2021 - Current
+        sub_title: MEng in Electrical and Computer Engineering
+        #quote: >
+          #Established in 1636, Harvard is the oldest higher education institution in the United States, and is widely regarded in terms of its influence, reputation, and academic pedigree as a leading university in not just the US but also the world.
+        description: | # this will include new lines to allow paragraphs
+          I am currently in the 1st semester of my masters program. My area of specialisation is Embedded Systems programming. I have taken up course work like:
+          - ECE 5725: Design with Embedded Operating Systems
+          - ECE 4760: Digital Systems Design Using Microcontrollers
+          - ECE 4320: Integrated Micro Sensors and Actuators: Bridging the Physical and Digital Worlds
+          
+      - layout: left
+        title: AIACTR
+        caption: 2015 - 2019
+        sub_title: B.Tech in Electronics and Communication Engineering
+        quote: >
+          Overall CGPA: 8.3 / 10
+        description: | # this will include new lines to allow paragraphs
+          Finished my undergraduate studies with a first division. Studied courses like:
+          - Embedded Systems
+          - Microprocessors and Microcontrollers
+          - Digital System Design
+          - Computer Organisation and Architecture
+          - Data Structures and Algorithms
   - title: Projects and Research # Title for the section
     layout: list # Type of content section (list/text)
     content:
@@ -247,36 +275,7 @@ content:
             ∙ Worked on ”Energy Efficient Buildings” under Prof. B.K. Panigrahi and Prof. Ashu Verma.
             
             ∙ Successfully developed an integrated light automation system (for HVAC) with 4 ambient zones
-            
 
-  - title: Education # Title for the section
-    layout: list # Type of content section (list/text)
-    content:
-      - layout: left
-        title: Cornell University
-        caption: 2021 - Current
-        sub_title: MEng in Electrical and Computer Engineering
-        #quote: >
-          #Established in 1636, Harvard is the oldest higher education institution in the United States, and is widely regarded in terms of its influence, reputation, and academic pedigree as a leading university in not just the US but also the world.
-        description: | # this will include new lines to allow paragraphs
-          I am currently in the 1st semester of my masters program. My area of specialisation is Embedded Systems programming. I have taken up course work like:
-          - ECE 5725: Design with Embedded Operating Systems
-          - ECE 4760: Digital Systems Design Using Microcontrollers
-          - ECE 4320: Integrated Micro Sensors and Actuators: Bridging the Physical and Digital Worlds
-          
-      - layout: left
-        title: AIACTR
-        caption: 2015 - 2019
-        sub_title: B.Tech in Electronics and Communication Engineering
-        quote: >
-          Overall CGPA: 8.3 / 10
-        description: | # this will include new lines to allow paragraphs
-          Finished my undergraduate studies with a first division. Studied courses like:
-          - Embedded Systems
-          - Microprocessors and Microcontrollers
-          - Digital System Design
-          - Computer Organisation and Architecture
-          - Data Structures and Algorithms
 # Footer
 footer_show_references: true
 # references_title: References on request (Override references text)
