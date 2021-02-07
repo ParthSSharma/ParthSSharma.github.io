@@ -81,6 +81,8 @@ content:
           - Digital System Design
           - Computer Organisation and Architecture
           - Data Structures and Algorithms
+          
+          
   - title: Projects and Research # Title for the section
     layout: list # Type of content section (list/text)
     content:
@@ -275,7 +277,6 @@ content:
             ∙ Worked on ”Energy Efficient Buildings” under Prof. B.K. Panigrahi and Prof. Ashu Verma.
             
             ∙ Successfully developed an integrated light automation system (for HVAC) with 4 ambient zones
-
 # Footer
 footer_show_references: true
 # references_title: References on request (Override references text)
