@@ -31,7 +31,7 @@ orcid_username: 0000-0001-5470-2866
 
 # Additional icon links
 additional_links:
-- title: Google Scholar
+#- title: Google Scholar
 icon: fas fa-graduation-cap
 url: https://scholar.google.com/citations?user=dAFMQ7MAAAAJ&hl=en
 # - title: another link
