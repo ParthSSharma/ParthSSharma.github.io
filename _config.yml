@@ -181,7 +181,7 @@ content:
           I worked on a colour coded security system which not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
           
       - layout: left
-        title: Cost-effective Color Pattern-based Security System
+        title: Offline Real-Time Portable GPS Tracking
         # link: github.com/sproogen
         # link_text: Project Website
         # additional_links:
@@ -192,7 +192,7 @@ content:
           #   icon: fab fa-github
           #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
         quote: >
-          P. S. Sharma, P. K. Jha, P. Singh, P. K. Roy and J. Ahuja, "Development of a Cost-effective Color Pattern-based Security System," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 988-991.
+          P. S. Sharma, P. K. Roy, P. Singh, R. Bhatia and P. K. Jha, "Offline Real-Time Portable GPS Tracking,"2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 574-576.
         description: | # this will include new lines to allow paragraphs
           I worked on a colour coded security system which not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
           
