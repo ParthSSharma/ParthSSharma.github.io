@@ -125,9 +125,9 @@ content:
         link: https://www.youtube.com/watch?v=4IzSJ1Biw3w
         link_text: Video demonstration of the project
         additional_links:
-            - title:  ParthSSharma/HandControlledQuadpod
-            icon: fab fa-github
-            url: https://github.com/ParthSSharma/HandControlledQuadpod
+            - layout: top-middle
+            link: https://github.com/ParthSSharma/HandControlledQuadpod
+            link_text: Code for the project
           # - title:  Github page for project (eg. sproogen/modern-resume-theme)
           #   icon: fab fa-github
           #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
