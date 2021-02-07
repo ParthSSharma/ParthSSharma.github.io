@@ -9,7 +9,7 @@ version: 2
 name: Parth Sarthi Sharma
 title: Electrical and Computer Engineering student
 email: pss242@cornell.edu
-website: https://parthssharma.github.io/
+# website: https://parthssharma.github.io/
 
 # Dark Mode (true/false/never)
 darkmode: true
