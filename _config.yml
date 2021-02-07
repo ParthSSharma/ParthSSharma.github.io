@@ -72,7 +72,8 @@ content:
         description: | # this will include new lines to allow paragraphs
           I worked on optimising the power supply and demand parameters using first <mark>Gurobi</mark> and the genetic algorithms using <mark>JAVA</mark>. My work was mostly programming the algorithms developed by my professors and supervisors (PhD students).
           
-      - title: High frequency AC switching using TRIACS
+      - layout: top-middle
+        title: High frequency AC switching using TRIACS
         # link: github.com/sproogen
         # link_text: Project Website
         # additional_links:
