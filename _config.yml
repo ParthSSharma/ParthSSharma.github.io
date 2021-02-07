@@ -142,7 +142,7 @@ content:
         quote: >
           This is a hobby project I worked on.
         description: | # this will include new lines to allow paragraphs
-          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that 
+          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that it would react to the the intensity of sound in the surrounding. Moreover, I programmed it such that it would be smoothened out instead of giving an instantaneous value.
 
   - title: Experience # Title for the section
     layout: list # Type of content section (list/text)
