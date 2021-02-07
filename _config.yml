@@ -178,7 +178,7 @@ content:
         quote: >
           P. S. Sharma, P. K. Roy, N. Ahmad, J. Ahuja and N. Kumar, "Localisation of License Plate and Character Recognition Using Haar Cascade," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 971-974.
         description: | # this will include new lines to allow paragraphs
-          I worked on a colour coded security system which not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
+          Recognising number plates using Neural Networks is computationally expensive. Thus, in order to save processing power, we worked on recogntion of the characters of a number plate using Haar Cascades and PyTesseract. Using our method, we were able to achieve an accuracy as high as 94.4%.
           
       - layout: left
         title: Offline Real-Time Portable GPS Tracking
@@ -194,7 +194,7 @@ content:
         quote: >
           P. S. Sharma, P. K. Roy, P. Singh, R. Bhatia and P. K. Jha, "Offline Real-Time Portable GPS Tracking,"2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 574-576.
         description: | # this will include new lines to allow paragraphs
-          I worked on a colour coded security system which not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
+          I worked on an offline GPS tracking device which doesn't need an active internet connection in order to determine the location. Using this device, I was able to determine the coordinates accurately upto 3 decimal places.
           
       - layout: left
         title: Music Visualizer on LED Strip
