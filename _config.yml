@@ -103,6 +103,38 @@ content:
           S. Rath, D. Pal, P. S. Sharma and B. K. Panigrahi, "A Cyber-Secure Distributed Control Architecture for Autonomous AC Microgrid," in IEEE Systems Journal, doi: 10.1109/JSYST.2020.3020968.
         description: | # this will include new lines to allow paragraphs
           It was another project I worked on at the Indian Institute of Technology, Delhi. It involved me disrupting the data in a CAN bus communication system taking place between two different microgrids (simulated using an OpalRT system) by first reading the data packets and then disrupting the system by spoofing corrupted data.
+      
+      - layout: top-middle
+        title: Implementation of Alexnet for self-driving car
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This project was a part of my senior thesis during my undergraduate studies.
+        description: | # this will include new lines to allow paragraphs
+          During the final semester of my undergraduated studies, I created a rudimentary version of a prototype self driving car using RaspberryPi and Alexnet. I first built a simple single lane track to run my model car on, used a controller and a RaspberryPi camera module to record the image data and commands sent by me and then trained a model. Then I downloaded the model on RaspberryPi and ran the model. The accuracy achieved was roughly 92%.
+          
+      - layout: top-middle
+        title: Hand Motion Controlled Quadpod Robot
+        link: https://www.youtube.com/watch?v=4IzSJ1Biw3w
+        link_text: Video demonstration of the project
+        additional_links:
+            - title:  sproogen/modern-resume-theme
+            icon: fab fa-github
+            url: https://github.com/ParthSSharma/HandControlledQuadpod
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This project was a part of my senior thesis during my undergraduate studies.
+        description: | # this will include new lines to allow paragraphs
+          It was another project I worked on at the Indian Institute of Technology, Delhi. It involved me disrupting the data in a CAN bus communication system taking place between two different microgrids (simulated using an OpalRT system) by first reading the data packets and then disrupting the system by spoofing corrupted data.
 
   - title: Experience # Title for the section
     layout: list # Type of content section (list/text)
