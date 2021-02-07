@@ -166,8 +166,8 @@ content:
         caption: Jun 2019 - Sep 2020
         #quote: >
         #  GTRS for ECE 4670 (Digital Communication System Design)
-        description: > # this will include new lines to allow paragraphs
-            ∙ Worked on Genetic Algorithms for energy conservation in power grids under Prof. Ashu Verma.
+        description: | # this will include new lines to allow paragraphs
+            ∙ Worked on Genetic Algorithms for energy conservation in power grids under Prof. Ashu Verma. |
             ∙ Worked on hacking CAN Bus and disrupting data under Prof. B. K. Panigrahi
             
       - layout: left
@@ -178,8 +178,8 @@ content:
         caption: Jun 2018 - Aug 2018
         #quote: >
         #  GTRS for ECE 4670 (Digital Communication System Design)
-        description: > # this will include new lines to allow paragraphs
-            ∙ Worked on ”Energy Efficient Buildings” under Prof. B.K. Panigrahi and Prof. Ashu Verma.
+        description: | # this will include new lines to allow paragraphs
+            ∙ Worked on ”Energy Efficient Buildings” under Prof. B.K. Panigrahi and Prof. Ashu Verma. |
             ∙ Successfully developed an integrated light automation system (for HVAC) with 4 ambient zones
             
 
