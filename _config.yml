@@ -48,7 +48,7 @@ orcid_username: 0000-0001-5470-2866
 # about_title: About Me
 # about_profile_image: images/Image.jpg
 about_content: | # this will include new lines to allow paragraphs
-  Hi, my name's Parth and I'm currently pursuing Masters of Engineering in Electrical and Computer Engineering student at Cornell University. My area of specialization is Embedded Systems. Before studying at Cornell, I was a Research Associate in the Centre for Energy Studies (CES) at the Indian Institute of Technology, Delhi. You can download my CV from [here](https://github.com/ParthSSharma/ParthSSharma.github.io/raw/master/assets/ParthResumeOverleaf.pdf).
+  Hi, my name's Parth and I'm currently pursuing Masters of Engineering in Electrical and Computer Engineering student at Cornell University. My area of specialization is Embedded Systems. Before studying at Cornell, I was a Research Associate in the Centre for Energy Studies (CES) at the Indian Institute of Technology, Delhi. You can download my CV [here](https://github.com/ParthSSharma/ParthSSharma.github.io/raw/master/assets/ParthResumeOverleaf.pdf).
 
   I am most skilled in: <mark>Embedded Systems</mark> and <mark>Eating Pizza</mark>
 
@@ -98,7 +98,7 @@ content:
           #   icon: fab fa-github
           #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
         quote: >
-          Ashu Verma, B.K. Panigrahi, Sumedha Sharms, Parth Sharma, "Optimal Building Energy Management System" (Indian Patent Application No.: 202011051401)
+          Ashu Verma, B.K. Panigrahi, Sumedha Sharma, Parth Sharma, "Optimal Building Energy Management System" (Indian Patent Application No.: 202011051401)
         description: | # this will include new lines to allow paragraphs
           I worked on optimising the power supply and demand parameters using first <mark>Gurobi</mark> and the genetic algorithms using <mark>JAVA</mark>. My work was mostly programming the algorithms developed by my professors and supervisors (PhD students).
           
