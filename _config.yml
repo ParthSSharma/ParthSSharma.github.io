@@ -73,9 +73,8 @@ content:
         caption: 2015 - 2019
         sub_title: B.Tech in Electronics and Communication Engineering
         quote: >
-          #
-        description: | # this will include new lines to allow paragraphs
           Overall CGPA: 8.3 / 10
+        description: | # this will include new lines to allow paragraphs
           Finished my undergraduate studies with a first division. Studied courses like:
           - Embedded Systems
           - Microprocessors and Microcontrollers
