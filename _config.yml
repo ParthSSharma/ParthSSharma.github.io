@@ -176,7 +176,7 @@ content:
         quote: >
           P. S. Sharma, P. K. Jha, P. Singh, P. K. Roy and J. Ahuja, "Development of a Cost-effective Color Pattern-based Security System," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 988-991.
         description: | # this will include new lines to allow paragraphs
-          I worked on a colour coded security system which not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
+          I worked on a colour coded security system that not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
           
       - layout: left
         title: Coin Detection based Mobile Charging System
@@ -208,7 +208,7 @@ content:
         quote: >
           P. S. Sharma, P. K. Roy, N. Ahmad, J. Ahuja and N. Kumar, "Localisation of License Plate and Character Recognition Using Haar Cascade," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 971-974.
         description: | # this will include new lines to allow paragraphs
-          Recognising number plates using Neural Networks is computationally expensive. Thus, in order to save processing power, we worked on recogntion of the characters of a number plate using Haar Cascades and PyTesseract. Using our method, we were able to achieve an accuracy as high as 94.4%.
+          Recognising number plates using Neural Networks is computationally expensive. Thus, in order to save processing power, we worked on the recognition of the characters of a number plate using Haar Cascades and PyTesseract. Using our method, we were able to achieve an accuracy as high as 94.4%.
           
       - layout: left
         title: Offline Real-Time Portable GPS Tracking
@@ -224,7 +224,7 @@ content:
         quote: >
           P. S. Sharma, P. K. Roy, P. Singh, R. Bhatia and P. K. Jha, "Offline Real-Time Portable GPS Tracking,"2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 574-576.
         description: | # this will include new lines to allow paragraphs
-          I worked on an offline GPS tracking device which doesn't need an active internet connection in order to determine the location. Using this device, I was able to determine the coordinates accurately upto 3 decimal places.
+          I worked on an offline GPS tracking device that doesn't need an active internet connection in order to determine the location. Using this device, I was able to determine the coordinates accurately up to 3 decimal places.
           
       - layout: left
         title: Music Visualizer on LED Strip
@@ -236,7 +236,7 @@ content:
         quote: >
           This is a hobby project I worked on.
         description: | # this will include new lines to allow paragraphs
-          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that it would react to the the intensity of sound in the surrounding. Moreover, I programmed it such that it would be smoothened out instead of giving an instantaneous value.
+          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that it would react to the intensity of sound in the surrounding. Moreover, I programmed it such that it would be smoothened out instead of giving an instantaneous value.
 
   - title: Experience # Title for the section
     layout: list # Type of content section (list/text)
