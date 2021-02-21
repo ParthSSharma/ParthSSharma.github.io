@@ -148,7 +148,7 @@ content:
         quote: >
           This project was a part of my senior thesis during my undergraduate studies.
         description: | # this will include new lines to allow paragraphs
-          During the final semester of my undergraduated studies, I created a rudimentary version of a prototype self driving car using RaspberryPi and Alexnet. I first built a simple single lane track to run my model car on, used a controller and a RaspberryPi camera module to record the image data and commands sent by me and then trained a model. Then I downloaded the model on RaspberryPi and ran the model. The accuracy achieved was roughly 92%.
+          During the final semester of my undergraduate studies, I created a rudimentary version of a prototype self driving car using RaspberryPi and Alexnet. I first built a simple single lane track to run my model car on, used a controller and a RaspberryPi camera module to record the image data and commands sent by me and then trained a model. Then I downloaded the model on RaspberryPi and ran the model. The accuracy achieved was roughly 92%.
           
       - layout: left
         title: Hand Motion Controlled Quadpod Robot
