@@ -160,7 +160,7 @@ content:
         quote: >
           This project was a part of my junior thesis during my undergraduate studies.
         description: | # this will include new lines to allow paragraphs
-          During the second last semester of my undergraduated studies, I created a Quadpod robot that can be controlled wirelessly using hand gestures. It consists of two modules: the Quadpod and the Controller. The controller has an accelerometer and a gyroscope which sends the orientation of the hand over to the Quadpod via Bluetooth and the Quadpod reacts accordingly.
+          During the second last semester of my undergraduate studies, I created a Quadpod robot that can be controlled wirelessly using hand gestures. It consists of two modules: the Quadpod and the Controller. The controller has an accelerometer and a gyroscope which sends the orientation of the hand over to the Quadpod via Bluetooth and the Quadpod reacts accordingly.
           
       - layout: left
         title: Cost-effective Color Pattern-based Security System
