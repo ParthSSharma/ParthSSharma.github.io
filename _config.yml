@@ -116,7 +116,7 @@ content:
         quote: >
           This is a subset of "Optimisation of power supply and demand parameters"
         description: | # this will include new lines to allow paragraphs
-          I worked on developing an easy to install module that can control up-to 4 appliances over the internet. I used TRIACS and designed a circuit using optocouplers and NodeMCU in order to switch the appliances. I also created an android application using <mark>MIT App Inventor</mark> and integrated everything using <mark>Google Firebase</mark>.
+          I worked on developing an easy to install module that can control up-to 4 appliances over the internet. I used TRIACS and designed a circuit using optocouplers and NodeMCU in order to switch the appliances. I also created an android application using <mark>MIT App Inventor</mark>, a desktop GUI using <mark>Processing</mark> and integrated everything using <mark>Google Firebase</mark>.
           
       - layout: left
         title: Disruption of data in microgrid communication
