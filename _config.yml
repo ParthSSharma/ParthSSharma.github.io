@@ -76,11 +76,11 @@ content:
           Overall CGPA: 8.3 / 10
         description: | # this will include new lines to allow paragraphs
           Finished my undergraduate studies with a first division. Studied courses like:
-          - Embedded Systems
-          - Microprocessors and Microcontrollers
-          - Digital System Design
-          - Computer Organisation and Architecture
-          - Data Structures and Algorithms
+          - ETEC-401: Embedded Systems
+          - ETEC-305: Microprocessors and Microcontrollers
+          - ETEC-309: Digital System Design
+          - ETCS-204: Computer Organisation and Architecture
+          - ETCS-209: Data Structures and Algorithms
           
           
   - title: Projects and Research # Title for the section
