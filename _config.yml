@@ -1,0 +1,292 @@
+# Site
+repository: sproogen/resume-theme
+favicon: images/favicon.ico
+
+# Content configuration version
+version: 2
+
+# Personal info
+name: Parth Sarthi Sharma
+title: Electrical and Computer Engineering student
+email: pss242@cornell.edu
+# website: https://parthssharma.github.io/
+
+# Dark Mode (true/false/never)
+darkmode: false
+
+# Social links
+# twitter_username: facespics
+github_username:  ParthSSharma
+stackoverflow_username: "9951130"
+# dribbble_username: jekyll
+# facebook_username: jekyll
+# flickr_username: jekyll
+# instagram_username: jameswgrant
+linkedin_username: parthssharma
+# xing_username: jekyll
+# pinterest_username: jekyll
+# youtube_username: globalmtb
+# googleplus_username: +jekyll
+orcid_username: 0000-0001-5470-2866
+
+# Additional icon links
+# additional_links:
+# - title: Google Scholar
+# icon: fas fa-graduation-cap
+# url: https://scholar.google.com/citations?user=dAFMQ7MAAAAJ&hl=en
+# - title: another link
+#   icon: font awesome brand icon name (eg. fab fa-twitter) (https://fontawesome.com/icons?d=gallery&m=free)
+#   url: Link url (eg. https://google.com)
+
+# Google Analytics and Tag Manager
+# Using more than one of these may cause issues with reporting
+# gtm: "GTM-0000000"
+# gtag: "UA-00000000-0"
+# google_analytics: "UA-00000000-0"
+
+# About Section
+# about_title: About Me
+# about_profile_image: images/Image.jpg
+about_content: | # this will include new lines to allow paragraphs
+  Hi, my name's Parth and I'm currently pursuing Masters of Engineering in Electrical and Computer Engineering at Cornell University. My area of specialization is Embedded Systems. Before studying at Cornell, I was a Research Associate in the Centre for Energy Studies (CES) at the Indian Institute of Technology, Delhi. You can download my CV [here](https://github.com/ParthSSharma/ParthSSharma.github.io/raw/master/assets/ParthResumeOverleaf.pdf).
+
+  I am most skilled in: <mark>Embedded Systems</mark> and <mark>Eating Pizza</mark>
+
+content:
+  - title: Education # Title for the section
+    layout: list # Type of content section (list/text)
+    content:
+      - layout: left
+        title: Cornell University
+        caption: 2021 - Current
+        sub_title: MEng in Electrical and Computer Engineering
+        #quote: >
+          #Established in 1636, Harvard is the oldest higher education institution in the United States, and is widely regarded in terms of its influence, reputation, and academic pedigree as a leading university in not just the US but also the world.
+        description: | # this will include new lines to allow paragraphs
+          I am currently in the 1st semester of my masters program. My area of specialisation is Embedded Systems programming. I have taken up course work like:
+          - ECE 5725: Design with Embedded Operating Systems
+          - ECE 4760: Digital Systems Design Using Microcontrollers
+          - ECE 4320: Integrated Micro Sensors and Actuators: Bridging the Physical and Digital Worlds
+          
+      - layout: left
+        title: AIACTR
+        caption: 2015 - 2019
+        sub_title: B.Tech in Electronics and Communication Engineering
+        quote: >
+          Overall CGPA: 8.3 / 10
+        description: | # this will include new lines to allow paragraphs
+          Finished my undergraduate studies with a first division. Studied courses like:
+          - ETEC-401: Embedded Systems
+          - ETEC-305: Microprocessors and Microcontrollers
+          - ETEC-309: Digital System Design
+          - ETCS-204: Computer Organisation and Architecture
+          - ETCS-209: Data Structures and Algorithms
+          
+          
+  - title: Projects and Research # Title for the section
+    layout: list # Type of content section (list/text)
+    content:
+      - layout: left
+        title: Optimisation of power supply and demand parameters
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          Ashu Verma, B.K. Panigrahi, Sumedha Sharma, Parth Sharma, "Optimal Building Energy Management System" (Indian Patent Application No.: 202011051401)
+        description: | # this will include new lines to allow paragraphs
+          I worked on optimising the power supply and demand parameters using first <mark>Gurobi</mark> and the genetic algorithms using <mark>JAVA</mark>. My work was mostly programming the algorithms developed by my professors and supervisors (PhD students).
+          
+      - layout: left
+        title: High frequency AC switching using TRIACS
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This is a subset of "Optimisation of power supply and demand parameters"
+        description: | # this will include new lines to allow paragraphs
+          I worked on developing an easy to install module that can control up-to 4 appliances over the internet. I used TRIACS and designed a circuit using optocouplers and NodeMCU in order to switch the appliances. I also created an android application using <mark>MIT App Inventor</mark>, a desktop GUI using <mark>Processing</mark> and integrated everything using <mark>Google Firebase</mark>.
+          
+      - layout: left
+        title: Disruption of data in microgrid communication
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          S. Rath, D. Pal, P. S. Sharma and B. K. Panigrahi, "A Cyber-Secure Distributed Control Architecture for Autonomous AC Microgrid," in IEEE Systems Journal, doi: 10.1109/JSYST.2020.3020968.
+        description: | # this will include new lines to allow paragraphs
+          It was another project I worked on at the Indian Institute of Technology, Delhi. It involved me disrupting the data in a CAN bus communication system taking place between two different microgrids (simulated using an OpalRT system) by first reading the data packets and then disrupting the system by spoofing corrupted data.
+      
+      - layout: left
+        title: Implementation of Alexnet for self-driving car
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This project was a part of my senior thesis during my undergraduate studies.
+        description: | # this will include new lines to allow paragraphs
+          During the final semester of my undergraduate studies, I created a rudimentary version of a prototype self driving car using RaspberryPi and Alexnet. I first built a simple single lane track to run my model car on, used a controller and a RaspberryPi camera module to record the image data and commands sent by me and then trained a model. Then I downloaded the model on RaspberryPi and ran the model. The accuracy achieved was roughly 92%.
+          
+      - layout: left
+        title: Hand Motion Controlled Quadpod Robot
+        link: https://www.youtube.com/watch?v=4IzSJ1Biw3w
+        link_text: Video demonstration of the project
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This project was a part of my junior thesis during my undergraduate studies.
+        description: | # this will include new lines to allow paragraphs
+          During the second last semester of my undergraduate studies, I created a Quadpod robot that can be controlled wirelessly using hand gestures. It consists of two modules: the Quadpod and the Controller. The controller has an accelerometer and a gyroscope which sends the orientation of the hand over to the Quadpod via Bluetooth and the Quadpod reacts accordingly.
+          
+      - layout: left
+        title: Cost-effective Color Pattern-based Security System
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          P. S. Sharma, P. K. Jha, P. Singh, P. K. Roy and J. Ahuja, "Development of a Cost-effective Color Pattern-based Security System," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 988-991.
+        description: | # this will include new lines to allow paragraphs
+          I worked on a colour coded security system that not only reads the colour cards of users to grant/deny them access, but also maintains a time-stamped database of all the card swipes.
+          
+      - layout: left
+        title: Coin Detection based Mobile Charging System
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          P. Goyal and P. S. Sharma, "Coin Detection based Mobile Charging System," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 60-63.
+        description: | # this will include new lines to allow paragraphs
+          I worked on a fully functioning model of a coin operated mobile charging station. There is a coin slot through which coins are inserted. Then the coin's radius is measured using a camera (with an algorithm running on MATLAB) and the appropriate amount of charge time is loaded to the microcontroller which is also connected to an LCD display which shows the remaining charge time to the user.
+          
+      - layout: left
+        title: Localisation of License Plate and Character Recognition Using Haar Cascade
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          P. S. Sharma, P. K. Roy, N. Ahmad, J. Ahuja and N. Kumar, "Localisation of License Plate and Character Recognition Using Haar Cascade," 2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 971-974.
+        description: | # this will include new lines to allow paragraphs
+          Recognising number plates using Neural Networks is computationally expensive. Thus, in order to save processing power, we worked on the recognition of the characters of a number plate using Haar Cascades and PyTesseract. Using our method, we were able to achieve an accuracy as high as 94.4%.
+          
+      - layout: left
+        title: Offline Real-Time Portable GPS Tracking
+        # link: github.com/sproogen
+        # link_text: Project Website
+        # additional_links:
+        #  - title:  sproogen/modern-resume-theme
+        #    icon: fab fa-github
+        #    url: github.com/sproogen/modern-resume-theme
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          P. S. Sharma, P. K. Roy, P. Singh, R. Bhatia and P. K. Jha, "Offline Real-Time Portable GPS Tracking,"2019 6th International Conference on Computing for Sustainable Global Development (INDIACom), New Delhi, India, 2019, pp. 574-576.
+        description: | # this will include new lines to allow paragraphs
+          I worked on an offline GPS tracking device that doesn't need an active internet connection in order to determine the location. Using this device, I was able to determine the coordinates accurately up to 3 decimal places.
+          
+      - layout: left
+        title: Music Visualizer on LED Strip
+        link: https://www.youtube.com/watch?v=TXOCmruMZ4o
+        link_text: Video demonstration of the project
+          # - title:  Github page for project (eg. sproogen/modern-resume-theme)
+          #   icon: fab fa-github
+          #   url: Link to project (eg. sproogen.github.io/modern-resume-theme)
+        quote: >
+          This is a hobby project I worked on.
+        description: | # this will include new lines to allow paragraphs
+          This was a simple hobby project that I worked on using a sound sensor and a NeoPixel LED strip. I hooked up the NeoPixel LED strip in such a way that it would react to the intensity of sound in the surrounding. Moreover, I programmed it such that it would be smoothened out instead of giving an instantaneous value.
+
+  - title: Experience # Title for the section
+    layout: list # Type of content section (list/text)
+    content:
+      - layout: left
+        title: Cornell University
+        #link: boringcompany.com
+        # link_text: boringcompany.com
+        sub_title: Graduate Teaching Research Specialist
+        caption: Jan 2021 - Present
+        #quote: >
+         # GTRS for ECE 4670 (Digital Communication System Design)
+        description: | # this will include new lines to allow paragraphs
+            My duties include, but are not limited to, assisting Prof. Peter Doerschuk with debugging and testing the laboratory systems and grading the assignments/homework submitted by the students with ECE 4670 (Digital Communication System Design)
+        
+      - layout: left
+        title: Indian Institute of Technology, Delhi
+        #link: boringcompany.com
+        # link_text: boringcompany.com
+        sub_title: Research Associate
+        caption: Jun 2019 - Sep 2020
+        #quote: >
+        #  GTRS for ECE 4670 (Digital Communication System Design)
+        description: | # this will include new lines to allow paragraphs
+            ∙ Worked on Genetic Algorithms for energy conservation in power grids under Prof. Ashu Verma.
+            
+            ∙ Worked on hacking CAN Bus and disrupting data under Prof. B. K. Panigrahi
+            
+      - layout: left
+        title: Indian Institute of Technology, Delhi
+        #link: boringcompany.com
+        # link_text: boringcompany.com
+        sub_title: Intern
+        caption: Jun 2018 - Aug 2018
+        #quote: >
+        #  GTRS for ECE 4670 (Digital Communication System Design)
+        description: | # this will include new lines to allow paragraphs
+            ∙ Worked on ”Energy Efficient Buildings” under Prof. B.K. Panigrahi and Prof. Ashu Verma.
+            
+            ∙ Successfully developed an integrated light automation system (for HVAC) with 4 ambient zones
+# Footer
+footer_show_references: true
+# references_title: References on request (Override references text)
+
+# Build settings
+remote_theme: sproogen/resume-theme
+
+sass:
+  sass_dir: _sass
+  style: compressed
+
+plugins:
+ - jekyll-seo-tag
