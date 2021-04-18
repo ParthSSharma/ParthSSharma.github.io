@@ -14277,54 +14277,69 @@ a.anchor-link {
 
 <pre><code>mkdir test
 cd test</code></pre>
+<p><br></p>
 </li>
-<li><p>Copy the <code>pico_sdk_import.cmake</code> file from the <code>external</code> folder in your <code>pico-sdk</code> installation to your test project folder by running:</p>
-
+<li>Copy the <code>pico_sdk_import.cmake</code> file from the <code>external</code> folder in your <code>pico-sdk</code> installation to your test project folder by running:
 <pre><code>cp ../pico-sdk/external/pico_sdk_import.cmake .</code></pre>
-</li>
-<li><p>Add a new file called <code>test.c</code> to the directory:</p>
+<br></li>
+<li>Add a new file called <code>test.c</code> to the directory:</li>
+</ul>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
-  <span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
-  <span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="cp"></span>
 
-  <span class="k">const</span> <span class="n">uint</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">25</span><span class="p">;</span>
+<span class="k">const</span> <span class="n">uint</span> <span class="n">LED_PIN</span> <span class="o">=</span> <span class="mi">25</span><span class="p">;</span>
 
-  <span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span>
-      <span class="n">stdio_init_all</span><span class="p">();</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span>
 
-      <span class="n">gpio_init</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">);</span>
-      <span class="n">gpio_set_dir</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">GPIO_OUT</span><span class="p">);</span>
+    <span class="n">gpio_init</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">);</span>
+    <span class="n">gpio_set_dir</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="n">GPIO_OUT</span><span class="p">);</span>
 
-      <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
-          <span class="n">gpio_put</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
-          <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">250</span><span class="p">);</span>
-          <span class="n">gpio_put</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
-          <span class="n">puts</span><span class="p">(</span><span class="s">&quot;Hello world</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-          <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
-      <span class="p">}</span>
-  <span class="p">}</span>
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+        <span class="n">gpio_put</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">250</span><span class="p">);</span>
+        <span class="n">gpio_put</span><span class="p">(</span><span class="n">LED_PIN</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">&quot;Hello world</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+        <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
-</li>
-<li><p>Add another file called <code>CMakeLists.txt</code> to the same directory:</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<ul>
+<li>Add another file called <code>CMakeLists.txt</code> to the same directory:</li>
+</ul>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
 
-  <span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
 
-  <span class="nb">project</span><span class="p">(</span><span class="s">test_project</span><span class="p">)</span>
+<span class="nb">project</span><span class="p">(</span><span class="s">test_project</span><span class="p">)</span>
 
-  <span class="nb">pico_sdk_init</span><span class="p">()</span>
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
 
-  <span class="nb">add_executable</span><span class="p">(</span><span class="s">test</span> <span class="s">test.c</span><span class="p">)</span>
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">test</span> <span class="s">test.c</span><span class="p">)</span>
 
-  <span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">test</span> <span class="s">1</span><span class="p">)</span>
-  <span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">test</span> <span class="s">0</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">test</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">test</span> <span class="s">0</span><span class="p">)</span>
 
-  <span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">test</span><span class="p">)</span>
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">test</span><span class="p">)</span>
 
-  <span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">test</span> <span class="s">pico_stdlib</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">test</span> <span class="s">pico_stdlib</span><span class="p">)</span>
 </pre></div>
-</li>
-</ul>
 <hr>
 
 </div>
