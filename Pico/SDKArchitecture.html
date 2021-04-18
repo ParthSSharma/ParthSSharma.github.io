@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>SDKArchitecture</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,47 +14259,52 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Understanding-the-C/C++-SDK-architecture-for-the-Raspberry-Pi-Pico">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico<a class="anchor-link" href="#Understanding-the-C/C++-SDK-architecture-for-the-Raspberry-Pi-Pico">&#182;</a></h1><p>Everything in this file comes from the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">Raspberry Pi Pico for C/C++ SDK</a> and Prof. Hunter Adams's <a href="https://vha3.github.io/Pico/Setup/SDKArchitecture.html">SDK Architecture page</a>. This file contains all of the same content, just organized into a different manner.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
-<hr>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
+<h2 id="INTERFACE-Libraries">INTERFACE Libraries<a class="anchor-link" href="#INTERFACE-Libraries">&#182;</a></h2><p>All libraries within the SDK (with the exception of the C/C++ standard libraries provided by the compiler) are <code>INTERFACE</code> libraries. A CMake <code>INTERFACE</code> library is a collection of:</p>
 <blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
+<li>Source files</li>
+<li>Include paths</li>
+<li>Compiler definitions (visible to code as #defines)</li>
+<li>Compile and link options</li>
+<li>Dependencies on other INTERFACE libraries</li>
+</ul>
+</blockquote>
+<p>All of these <code>INTERFACE</code> libraries form a tree of dependencies, each contributing source files, include paths, compiler definitions, and compile/link options to the build. Collection of all of these dependencies is done recursively. They are collected based on the libraries you have listed in your CMakeLists.txt file, and by the libraries depended on by those libraries, and so on.</p>
+<p>A single project may contain many executables, as is the case for the <code>pico-examples</code> project. All of the code for each executable, including the SDK libraries, is (re)compiled for each executable from source. This allows you to specify customised settings for those libraries on a per-application basis, at compile-time.</p>
+<hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="SDK-library-structure">SDK library structure<a class="anchor-link" href="#SDK-library-structure">&#182;</a></h2><h4 id="High-level-API's">High-level API's<a class="anchor-link" href="#High-level-API's">&#182;</a></h4><p>The SDK libraries are arranged heirarchically. There are high-level libraries (<code>pico_xxxx</code>) that generally enable the user to do things that have cross-cutting concerns between various pieces of hardware. For example, the <code>sleep_</code> functions in <code>pico_time</code> must be aware of both the RP2040's timer hardware and with the way that the RP2040 enters and exits low-power states.</p>
+<p>Generally speaking, these libraries are build upon one or more lower-level <code>hardware_</code> libraries, and often depend on one another. Section 4.2 of the SDK guide lists all these high-level libraries.</p>
+<h4 id="Runtime-support-libraries">Runtime support libraries<a class="anchor-link" href="#Runtime-support-libraries">&#182;</a></h4><p>As per <a href="https://en.wikipedia.org/wiki/Runtime_library">wikipedia</a>, a runtime library is a set of low-level routines used by a compiler to invoke some of the behaviors of a runtime environment, by inserting calls to the runtime library into compiled executable binary. Section 4.4 of the SDK guide provides a description of all runtime libraries that bundle functionality which is common to most RP2040-based applications.</p>
+<h4 id="Hardware-support-libraries">Hardware support libraries<a class="anchor-link" href="#Hardware-support-libraries">&#182;</a></h4><p>Hardware support libraries are individual libraries (<code>hardware_xxx</code>) that provide actual API's for interacting with each piece of physical hardware/peripheral. They are lightweight and provide only thin abstractions. They generally provide functions for configuring or interacting with the peripheral hardware at a functional level, rather than accessing registers directly. These have been described quite extensively in section 4.1 of the SDK.</p>
+<p>These libraries are intended to have very minimal runtime cost. They generally do not require any or much RAM, and do not rely on other runtime infrastructure. In general, their only dpendencies are the <code>hardware_structs</code> and <code>hardware_regs</code> libraries that contain definitions of memory-mapped register layout on the RP2040. Many of them are implemented as static inline functions, the idea being that you sacrifice no performance by using these functions as compared with using preprocessor macros with the <code>hardware_regs</code> definitions.</p>
+<h4 id="Hardware-structs-library">Hardware structs library<a class="anchor-link" href="#Hardware-structs-library">&#182;</a></h4><p>The <code>hardware_structs</code> library provides a set of C structures which represent the memory mapped layout of the RP2040 registers in the system address space. The struct headers are named consistently with both the <code>hardware</code> libraries and the <code>hardware_regs</code> register headers. So, for example, if you access the <code>hardware_pio</code> library's functionality through <code>hardware/pio.h</code>, the <code>hardware_structs</code> library (a dependee of <code>hardware_pio</code>) contains a header you can include as <code>hardware/structs/pio.h</code> if you need to access a register directly, and this itself pulls in <code>hardware/regs/pio.h</code> for register field definitions.</p>
+<h4 id="Hardware-registers-library">Hardware registers library<a class="anchor-link" href="#Hardware-registers-library">&#182;</a></h4><p>These are the lowest level libraries. The <code>hardware_regs</code> library is a complete set of include files for all RP2040 registers, autogenerated from the hardware itself. These are heavily commented, and they define the offset of every register and the layout of the fields in those registers, as well as the access type of the field (e.g. read-only). Note that these contain only comments and <code>#define</code> statements, so they can be included from both assembly files and C files.</p>
+<hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Adding-SDK-libraries-to-your-project">Adding SDK libraries to your project<a class="anchor-link" href="#Adding-SDK-libraries-to-your-project">&#182;</a></h2><h4 id="The-build-system">The build system<a class="anchor-link" href="#The-build-system">&#182;</a></h4><p>The Pico SDK uses CMake to manage builds. The project files titled <code>CMakeLists.txt</code> specify how your application or project should be built. To quote the SDK guide, "CMake is fundamental to the way the SDK is structured, and how applications are configured and built."</p>
+<p>Some of the most commonly used syntax and ideas are as follows:</p>
+<blockquote><ul>
+<li><p>The <code>add_executable(programName fileName.c)</code> function in this file declares that a program <code>programName</code> should be built from the C source file <code>fileName.c</code>. This will also be the target name used to build the program, allowing the user to say something like <code>make programName</code> in the build directory to build this particular application.</p>
+</li>
+<li><p><code>target_link_libraries(programName library1 library2 ... libraryN)</code> is pulling in the SDK functionality that the program needs. If you don't ask for a library, it doesn't appear in your program binary.</p>
+</li>
+<li><p><code>pico_add_extra_outputs(programName)</code> creates UF2 files for loading onto the Pico via USB. If we didn't include this, the system would build an ELF file (executable linkable format) that could be loaded onto the Pico through the Serial Wire Debug port, with a debugger setup like <code>gdb</code> and <code>openocd</code>. This also creates <code>.hex</code>, <code>.bin</code>, <code>.map</code>, and <code>.dis</code> files.</p>
+</li>
 </ul>
 </blockquote>
 <hr>
