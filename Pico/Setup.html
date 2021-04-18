@@ -14311,11 +14311,11 @@ a.anchor-link {
 <h2 id="Getting-the-SDK-and-examples">Getting the SDK and examples<a class="anchor-link" href="#Getting-the-SDK-and-examples">&#182;</a></h2><ol>
 <li>Open Windows PowerShell, and create a directory where you'd like to store all the Pico examples and the SDK.</li>
 <li>Run the following set of commands:
-<pre><code>git clone -b master https://github.com/raspberrypi/pico-sdk.git
-cd pico-sdk
-git submodule update --init
-cd ..
-git clone -b master https://github.com/raspberrypi/pico-examples.git</code></pre>
+<pre><code> git clone -b master https://github.com/raspberrypi/pico-sdk.git
+ cd pico-sdk
+ git submodule update --init
+ cd ..
+ git clone -b master https://github.com/raspberrypi/pico-examples.git</code></pre>
 </li>
 </ol>
 <hr>
@@ -14334,11 +14334,11 @@ git clone -b master https://github.com/raspberrypi/pico-examples.git</code></pre
 <li>Open a new Command Prompt window by again navigating from the Windows Menu to <code>Windows &gt; Visual Studio 2019 &gt; Developer Command Prompt</code>. Closing/re-opening will set the environment variable that we configured above.</li>
 <li>Navigate to the <code>pico-examples</code> folder.</li>
 <li>Build the "Hello World" example by running:
-<pre><code>cd pico-examples
-mkdir build
-cd build
-cmake -G "NMake Makefiles" ..
-nmake</code></pre>
+<pre><code> cd pico-examples
+ mkdir build
+ cd build
+ cmake -G "NMake Makefiles" ..
+ nmake</code></pre>
 </li>
 <li>Within the build directory, you will now find a <code>hello_world</code> directory. You will find directories for each of the other example projects too. These folders will contain the <code>ELF</code>, <code>bin</code>, and <code>uf2</code> target files for each project. The <code>uf2</code> target file can be dragged-and-dropped directly onto an RP2040 board attached to your PC via USB, as explained in the next section.</li>
 </ol>
