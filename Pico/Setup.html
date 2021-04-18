@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Setup Pico Software</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,34 +14259,47 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Setting-up-the-Raspberry-Pi-Pico-for-C/C++-Development-on-Windows">Setting up the Raspberry Pi Pico for C/C++ Development on Windows<a class="anchor-link" href="#Setting-up-the-Raspberry-Pi-Pico-for-C/C++-Development-on-Windows">&#182;</a></h1><p>Everything in this file comes from the <a href="https://datasheets.raspberrypi.org/pico/getting-started-with-pico.pdf">Getting started with Raspberry Pi Pico for C/C++ development guide</a> and Prof. Hunter Adams's <a href="https://vha3.github.io/Pico/Setup/PicoSetup.html">setup page</a>. This file contains all of the same content, just organized into an enumerated list.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
+<h2 id="Installing-Required-Software">Installing Required Software<a class="anchor-link" href="#Installing-Required-Software">&#182;</a></h2><ol>
+<li><p>Install the <a href="https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads">ARM GCC compiler</a>.</p>
+<blockquote><p>During installation, make sure to tick the box to register the path to the ARM compiler as an environment veraible in the Windows shell when prompted to do so.</p>
+</blockquote>
+</li>
+<li><p>Install <a href="https://cmake.org/download/">Install CMake</a>.</p>
+<blockquote><p>When prompted, add CMake to the system PATH for all users.</p>
+</blockquote>
+</li>
+<li><p>Install <a href="https://visualstudio.microsoft.com/downloads/">Visual Studio Code</a> and <a href="https://visualstudio.microsoft.com/downloads/"></a>.</p>
+<blockquote><ul>
+<li>When prompted by the Built Tools for Visual Studio installer, you need to install the C++ build tools only.</li>
+<li>You must install the full "Windows 10 SDK" package as the SDK will need to build the pioasm and elf2uf2 tools locally. Removing it from the list of installed items will mean that you will be unable to build Raspberry Pi Pico binaries.</li>
 </ul>
-<hr>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
+</blockquote>
+</li>
+<li><p>Install <a href="https://www.python.org/downloads/windows/">Python 3.x</a> (I installed Python 3.9 but I believe 3.6+ works).</p>
+<blockquote><ul>
+<li>When prompted by the installer, add Python 3.x to the system PATH for all users.</li>
+<li>You should be additionally disable the MAX_PATH length when prompted at the end of the installation.</li>
+<li>When installing, choose 'Custom installation,' click through 'Optional Features' and then under 'Advanced Features' choose 'Install for all users'</li>
+<li>It is possible that you will need to make a symbolic link so that the Makefile can find Python 3. To do so, type cmd in the Run Window so that the Developer Command Prompt icon appears in the Start Menu. Select the small arrow to the right of the icon, and then select "Run as administrator." Navigate to <code>C:\Program Files\Python39</code> and make a symlink by running <code>C:\Program Files\Python39 &gt; mklink python3.exe python.exe</code>. Only do this if your build fails because Make can't find your python installation.</li>
+</ul>
+</blockquote>
+</li>
+<li><p>Install <a href="https://git-scm.com/download/win">Git</a>.</p>
+<blockquote><ul>
+<li>When prompted by the installer, make sure that you change the default editor away from vim.</li>
+<li>Tick the checkbox to allow Git to be used from third-party tools.</li>
+<li>Check the box "Checkout as is, commit as-is" (unless you have a strong reason not to).</li>
+<li>Select "Use Windows' default console window".</li>
+<li>Select "Enable experimental support for pseudo consoles".</li>
+</ul>
+</blockquote>
+</li>
 </ol>
 <hr>
 
@@ -14294,11 +14307,52 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-</ul>
-</blockquote>
+<h2 id="Getting-the-SDK-and-examples">Getting the SDK and examples<a class="anchor-link" href="#Getting-the-SDK-and-examples">&#182;</a></h2><ol>
+<li>Open Windows PowerShell, and create a directory where you'd like to store all the Pico examples and the SDK.</li>
+<li>Run the following set of commands:
+<pre><code>git clone -b master https://github.com/raspberrypi/pico-sdk.git
+cd pico-sdk
+git submodule update --init
+cd ..
+git clone -b master https://github.com/raspberrypi/pico-examples.git</code></pre>
+</li>
+</ol>
+<hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Building-the-example-projects-from-the-Command-Line">Building the example projects from the Command Line<a class="anchor-link" href="#Building-the-example-projects-from-the-Command-Line">&#182;</a></h2><ol>
+<li>From the Windows Menu, select <code>Windows &gt; Visual Studio 2019 &gt; Developer Command Prompt</code>.</li>
+<li>Navigate to the directory where you've installed the Pico examples and SDK.</li>
+<li>Set the path to the SDK by running the following:
+<pre><code>setx PICO_SDK_PATH "..\..\pico-sdk"</code></pre>
+</li>
+<li>Close the current command prompt window.</li>
+<li>Open a new Command Prompt window by again navigating from the Windows Menu to <code>Windows &gt; Visual Studio 2019 &gt; Developer Command Prompt</code>. Closing/re-opening will set the environment variable that we configured above.</li>
+<li>Navigate to the <code>pico-examples</code> folder.</li>
+<li>Build the "Hello World" example by running:
+<pre><code>cd pico-examples
+mkdir build
+cd build
+cmake -G "NMake Makefiles" ..
+nmake</code></pre>
+</li>
+<li>Within the build directory, you will now find a <code>hello_world</code> directory. You will find directories for each of the other example projects too. These folders will contain the <code>ELF</code>, <code>bin</code>, and <code>uf2</code> target files for each project. The <code>uf2</code> target file can be dragged-and-dropped directly onto an RP2040 board attached to your PC via USB, as explained in the next section.</li>
+</ol>
+<hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><ol>
+<li>While holding down the <code>BOOTSEL</code> button, plug the Pico into a USB port.</li>
+<li>The Pico will appear as a mass storage device in your file navigator.</li>
+<li>Drag-and-drop <code>pico-examples\build\blink.uf2</code> to the Pico, as you would if you were moving a file to a flash drive.</li>
+<li>The Pico will automatically reboot, and start running the Blink example, flashing the LED.</li>
+</ol>
 <hr>
 
 </div>
