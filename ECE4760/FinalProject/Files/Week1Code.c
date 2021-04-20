@@ -1,3 +1,10 @@
+/*
+Authors: Shreyas Patil, Parth Sarthi Sharma
+Affiliation: Cornell University
+Course: ECE 4760
+Purpose: Week 1 of Final Project
+*/
+
 #include "config_1_3_2.h" //Contains the main configurations like clock freq etc.
 #include "pt_cornell_1_3_2_python.h" //Threading library
 #include "tft_master.h" //Library used to use the TFT screen
