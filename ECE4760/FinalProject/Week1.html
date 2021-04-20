@@ -14260,96 +14260,94 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Week-1">Week 1<a class="anchor-link" href="#Week-1">&#182;</a></h1><p>During week 1 of the project, we setup a basic program to display a moving ground frame on the TFT screen attached to the PIC microcontroller.</p>
+<hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>The code can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/DinoGame.c">here</a>.</p>
+<h2 id="The-Design">The Design<a class="anchor-link" href="#The-Design">&#182;</a></h2><p>In order to create the running ground, we used a simple trick of moving some streaks of white color to the left with each passing frame. Each streak of the ground is a <code>struct</code> stored in an array of grounds. It is implemented as below:</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;config_1_3_2.h&quot;</span><span class="c1"> //Contains the main configurations like clock freq etc.</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&quot;pt_cornell_1_3_2_python.h&quot;</span><span class="c1"> //Threading library</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&quot;tft_master.h&quot;</span><span class="c1"> //Library used to use the TFT screen</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&quot;tft_gfx.h&quot;</span><span class="c1"> //Library used to draw on the TFT screen</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="c1"> //Standard C library</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&lt;stdfix.h&gt;</span><span class="c1"> //Library for importing the fixed-point datatype</span><span class="cp"></span>
-<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //Library with all math functions</span><span class="cp"></span>
-
-<span class="cp">#define GROUND_SIZE 10 </span><span class="c1">//Number of elements in the ground array</span>
-<span class="cp">#define GROUND_HEIGHT 60 </span><span class="c1">//Height of the ground above the base</span>
-<span class="cp">#define HEIGHT 240 </span><span class="c1">//Height of the TFT screen</span>
-<span class="cp">#define WIDTH 320 </span><span class="c1">//Width of the TFT screen</span>
-<span class="cp">#define HARD_COLOR 0xFFFF </span><span class="c1">//Display white</span>
-<span class="cp">#define SOFT_COLOR 0x2945 </span><span class="c1">//Display grayish color</span>
-<span class="cp">#define SPEED 5 </span><span class="c1">//Speed with which the ground moves</span>
-
-<span class="kt">int</span> <span class="n">exTime</span><span class="p">;</span> <span class="c1">//Time to yield the animation protothread</span>
-
-<span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">60</span><span class="p">];</span> <span class="c1">//Buffer to display the strings on the TFT</span>
-
-<span class="k">struct</span> <span class="nc">Ground</span><span class="p">{</span> <span class="c1">//Ground structure to store each small ground element with c-coordinate, y-coordinate and width</span>
+<div class="highlight"><pre><span></span><span class="cp">#define GROUND_SIZE 10</span>
+<span class="k">struct</span> <span class="nc">Ground</span><span class="p">{</span>
     <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">;</span>
 <span class="p">};</span>
+<span class="k">struct</span> <span class="nc">Ground</span> <span class="n">ground</span><span class="p">[</span><span class="n">GROUND_SIZE</span><span class="p">];</span>
+</pre></div>
 
-<span class="kr">inline</span> <span class="kt">int</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span> <span class="c1">//Function to generate a random number between min and max</span>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to first initialize all the elements of the array, we loop through the array and randomize the x-coordinate, the y-coordinate and the width of the ground. To do so, we use an inline random function as implemented below:</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kr">inline</span> <span class="kt">int</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="n">max</span> <span class="o">-</span> <span class="n">min</span><span class="p">))</span> <span class="o">+</span> <span class="n">min</span><span class="p">;</span>
 <span class="p">}</span>
+</pre></div>
 
-<span class="k">struct</span> <span class="nc">Ground</span> <span class="n">ground</span><span class="p">[</span><span class="n">GROUND_SIZE</span><span class="p">];</span> <span class="c1">//Ground array</span>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>This random function takes in two arguments: a lower limit and an upper limit. It returns an integer between the said limits. Now that we had the <code>randomRange</code> function, we implemented a <code>for</code> loop to initialize all the parameters in <code>main</code> as below:</p>
 
-
-<span class="k">static</span> <span class="nf">PT_THREAD</span> <span class="p">(</span><span class="n">pt_anim</span><span class="p">(</span><span class="k">struct</span> <span class="nc">pt</span> <span class="o">*</span><span class="n">pt</span><span class="p">)){</span> <span class="c1">//Animation protothread</span>
-    <span class="n">PT_BEGIN</span><span class="p">(</span><span class="n">pt</span><span class="p">);</span> <span class="c1">//Begin the protothread</span>
-    <span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">begin_time</span><span class="p">,</span> <span class="n">i</span><span class="p">;</span> <span class="c1">//Variable to keep track of start time and counter i</span>
-    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//Infinite while loop</span>
-        <span class="n">begin_time</span> <span class="o">=</span> <span class="n">PT_GET_TIME</span><span class="p">();</span> <span class="c1">//Get start time</span>
-        <span class="n">tft_drawFastHLine</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="n">SOFT_COLOR</span><span class="p">);</span> <span class="c1">//Draw a white line to represent ground</span>
-        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
-            <span class="n">tft_drawFastHLine</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span><span class="p">,</span> <span class="n">ILI9340_BLACK</span><span class="p">);</span> <span class="c1">//Clear the old display of the ground by drawing it with black </span>
-            <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span> <span class="c1">//Change the c-coordinate based on speed</span>
-            <span class="k">if</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">+</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the ground element is out of screen</span>
-                <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span> <span class="c1">//Reset the ground element&#39;s x-coordinate</span>
-                <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span> <span class="c1">//Get a new y-coordinate for the ground element</span>
-                <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">//Get a new width for the ground element</span>
-            <span class="p">}</span>
-        <span class="p">}</span>
-
-        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
-            <span class="n">tft_drawFastHLine</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span><span class="p">,</span> <span class="n">HARD_COLOR</span><span class="p">);</span> <span class="c1">//Draw the new display of the ground elements</span>
-        <span class="p">}</span>
-        <span class="n">exTime</span> <span class="o">=</span> <span class="mi">33</span> <span class="o">-</span> <span class="p">(</span><span class="n">PT_GET_TIME</span><span class="p">()</span> <span class="o">-</span> <span class="n">begin_time</span><span class="p">);</span> <span class="c1">//Get remaining time to achieve 30 frames per second</span>
-        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">exTime</span><span class="p">);</span> <span class="c1">//Print out the remaining time</span>
-        <span class="n">PT_YIELD_TIME_msec</span><span class="p">(</span><span class="n">exTime</span><span class="p">);</span> <span class="c1">//Yield for the remaining time</span>
-    <span class="p">}</span>
-    <span class="n">PT_END</span><span class="p">(</span><span class="n">pt</span><span class="p">);</span> <span class="c1">//End the protothread</span>
-<span class="p">}</span>
-
-<span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span> <span class="c1">//The main function</span>
-    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span> <span class="c1">//Counter variable i</span>
-    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">);</span> <span class="c1">//Assign them a random x-coordinate</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span> <span class="c1">//Assign them a random y-coordinate</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">//Assign them a random width</span>
-    <span class="p">}</span>
-
-    <span class="n">tft_init_hw</span><span class="p">();</span> <span class="c1">//Inititialise the TFT hardware</span>
-    <span class="n">tft_begin</span><span class="p">();</span> <span class="c1">//Begin the TFT</span>
-    <span class="n">tft_fillScreen</span><span class="p">(</span><span class="n">ILI9340_BLACK</span><span class="p">);</span> <span class="c1">//Fill the TFT screen with black colour</span>
-    <span class="n">tft_setRotation</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">//Set the TFT screen orientation</span>
-
-    <span class="n">INTEnableSystemMultiVectoredInt</span><span class="p">();</span> <span class="c1">//Enable system wide interrupts</span>
-
-    <span class="n">PT_setup</span><span class="p">();</span> <span class="c1">//Setup threads</span>
-    <span class="n">pt_add</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pt_anim</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">//Add animation thread to the chain of protothreads</span>
-    <span class="n">PT_INIT</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pt_sched</span><span class="p">);</span> <span class="c1">//Initialize the scheduler</span>
-    <span class="n">pt_sched_method</span> <span class="o">=</span> <span class="n">SCHED_ROUND_ROBIN</span><span class="p">;</span> <span class="c1">//Configure the scheduling method to be Round Robin </span>
-    <span class="n">PT_SCHEDULE</span><span class="p">(</span><span class="n">protothread_sched</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pt_sched</span><span class="p">));</span> <span class="c1">//Schedule the protothreads</span>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">);</span>
+    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span>
+    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
 <span class="p">}</span>
 </pre></div>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Now that we had an initialized array of streaks on the ground, we needed to update it for every iteration. It was done so by following a simple algorithm:</p>
+<ul>
+<li>Loop through each element in the ground array</li>
+<li>Update the x-coordinate of the element based on the speed</li>
+<li>If an element has reached the left-most edge, reset its parameters</li>
+</ul>
+<p>This algorithm has been implemented as below:</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">+</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The complete code for the end of week 1 can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week1Code.c">here</a>. The output obtained by running the code at the end of week 1 is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week1Ground.jfif" alt="The Moving Ground Frame"></p>
 
 </div>
 </div>
