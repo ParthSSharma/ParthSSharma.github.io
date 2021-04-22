@@ -25,7 +25,7 @@ int exTime; //Time to yield the animation protothread
 
 char buffer[60]; //Buffer to display the strings on the TFT
 
-struct Ground{ //Ground structure to store each small ground element with c-coordinate, y-coordinate and width
+struct Ground{ //Ground structure to store each small ground element with x-coordinate, y-coordinate and width
     int x, y, w;
 };
 
@@ -44,7 +44,7 @@ static PT_THREAD (pt_anim(struct pt *pt)){ //Animation protothread
         tft_drawFastHLine(0, HEIGHT - GROUND_HEIGHT, WIDTH, SOFT_COLOR); //Draw a white line to represent ground
         for(i = 0; i < GROUND_SIZE; i++){ //For all elements ranging in the ground array
             tft_drawFastHLine(ground[i].x, ground[i].y, ground[i].w, ILI9340_BLACK); //Clear the old display of the ground by drawing it with black 
-            ground[i].x -= SPEED; //Change the c-coordinate based on speed
+            ground[i].x -= SPEED; //Change the x-coordinate based on speed
             if(ground[i].x + ground[i].w <= 0){ //If the ground element is out of screen
                 ground[i].x = WIDTH; //Reset the ground element's x-coordinate
                 ground[i].y = randomRange(HEIGHT - GROUND_HEIGHT + 10, HEIGHT); //Get a new y-coordinate for the ground element

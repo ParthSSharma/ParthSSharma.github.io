@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Week 1</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Week 2</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,24 +14259,45 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Week-1">Week 1<a class="anchor-link" href="#Week-1">&#182;</a></h1><p>During week 1 of the project, we setup a basic program to display a moving ground frame on the TFT screen attached to the PIC microcontroller. In order to so, we have used the time sharing threading algorithm called <code>protothreads</code> which can be found <a href="https://people.ece.cornell.edu/land/courses/ece4760/PIC32/index_Protothreads.html">here</a>.</p>
+<h1 id="Week-2">Week 2<a class="anchor-link" href="#Week-2">&#182;</a></h1><p>During week 2 of the project, we added some moving obstacles and the dino in the form of some boxes. We then created a Python GUI to interact with the game. The GUI has 3 buttons:</p>
+<ul>
+<li>Start button to start the game</li>
+<li>Jump button to make the dino jump</li>
+<li>Restart button to restart the game in case the dino dies</li>
+</ul>
+<p>We also used the GUI for debugging purposes.</p>
+<p>Once we had our GUI ready, we implemented the jump as well as the collision logic in our code. Once it was up and running, we implemented the voice control feature using ADC input and FFT algorithm.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="The-Design">The Design<a class="anchor-link" href="#The-Design">&#182;</a></h2><p>In order to create the running ground, we used a simple trick of moving some streaks of white color to the left with each passing frame. Each streak of the ground is a <code>struct</code> stored in an array of grounds. It is implemented as below:</p>
+<h2 id="The-Design">The Design<a class="anchor-link" href="#The-Design">&#182;</a></h2><p>The code was implemented in various phases as described below.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div class="highlight"><pre><span></span><span class="cp">#define GROUND_SIZE 10</span>
-<span class="k">struct</span> <span class="nc">Ground</span><span class="p">{</span>
-    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">;</span>
+<h4 id="1.-Implementing-the-Obstacles">1. Implementing the Obstacles<a class="anchor-link" href="#1.-Implementing-the-Obstacles">&#182;</a></h4><p>Just like with implementing the ground, we implemented the obstacles using a <code>struct</code>. However, there is a catch. The ground was implemeted using an array while we only used single variable to implement the obstacle (and reuse it to bring in the next obstacle). We also used a new variable called <code>obsType</code> to keep a track of the type of obstacle (we have 3 different types based on their width and height).</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define OBS_W_0 10</span>
+<span class="cp">#define OBS_H_0 20</span>
+<span class="cp">#define OBS_W_1 15</span>
+<span class="cp">#define OBS_H_1 30</span>
+<span class="cp">#define OBS_W_2 30</span>
+<span class="cp">#define OBS_H_2 20</span>
+
+<span class="kt">int</span> <span class="n">obsType</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="nc">Obstacle</span><span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">;</span>
 <span class="p">};</span>
-<span class="k">struct</span> <span class="nc">Ground</span> <span class="n">ground</span><span class="p">[</span><span class="n">GROUND_SIZE</span><span class="p">];</span>
+<span class="k">struct</span> <span class="nc">Obstacle</span> <span class="n">obstacle</span><span class="p">;</span>
 </pre></div>
 <p><br></p>
 
@@ -14284,14 +14305,25 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>In order to first initialize all the elements of the array, we loop through the array and randomize the x-coordinate, the y-coordinate and the width of the ground. To do so, we use an inline random function as implemented below:</p>
+<p>We initialized the obstacle in main as below:</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div class="highlight"><pre><span></span><span class="kr">inline</span> <span class="kt">int</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="n">max</span> <span class="o">-</span> <span class="n">min</span><span class="p">))</span> <span class="o">+</span> <span class="n">min</span><span class="p">;</span>
+<div class="highlight"><pre><span></span><span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+<span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span>
+<span class="k">if</span><span class="p">(</span><span class="n">obsType</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">obsType</span> <span class="o">==</span> <span class="mi">1</span><span class="p">){</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span><span class="p">{</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
 <span class="p">}</span>
 </pre></div>
 <p><br></p>
@@ -14300,29 +14332,10 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>This random function takes in two arguments: a lower limit and an upper limit. It returns an integer between the said limits. Now that we had the <code>randomRange</code> function, we implemented a <code>for</code> loop to initialize all the parameters in <code>main</code> as below:</p>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
-    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">);</span>
-    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span>
-    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
-<span class="p">}</span>
-</pre></div>
-<p><br></p>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>Now that we had an initialized array of streaks on the ground, we needed to update it for every iteration. It was done so by following a simple algorithm:</p>
+<p>Now that we had an initialized the obstacle, we needed to update it for every iteration. It was done so by following a simple algorithm:</p>
 <ul>
-<li>Loop through each element in the ground array</li>
-<li>Update the x-coordinate of the element based on the speed</li>
-<li>If an element has reached the left-most edge, reset its parameters</li>
+<li>Update the x-coordinate of the obstacle based on the speed</li>
+<li>If the obstacle has reached the left-most edge, reset its parameters</li>
 </ul>
 <p>This algorithm has been implemented as below:</p>
 
@@ -14330,14 +14343,26 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
-    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">+</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span>
-        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>
+<div class="highlight"><pre><span></span><span class="n">tft_fillRect</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">ILI9340_BLACK</span><span class="p">);</span>
+
+<span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span>
+<span class="k">if</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span> <span class="o">+</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">);</span>
+    <span class="k">switch</span><span class="p">(</span><span class="n">obsType</span><span class="p">){</span>
+        <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
     <span class="p">}</span>
 <span class="p">}</span>
+
+<span class="n">tft_fillRect</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">HARD_COLOR</span><span class="p">);</span>
 </pre></div>
 <p><br></p>
 
@@ -14345,19 +14370,18 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>The complete code for the end of week 1 can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week1Code.c">here</a>. The output obtained by running the code at the end of week 1 is shown below.</p>
+<p>The output obtained after running this code is given below.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <p><div style="display: flex; justify-content: center;">
-  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week1Ground.jfif" style="width: 446px; height: 273px;" >
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Obstacle.jfif" style="width: 446px; height: 273px;" >
 </div></p>
 <figure>
-    <center><figcaption>The Moving Ground Frame</figcaption></center>
-</figure><hr>
-
+    <center><figcaption>The Moving Obstacle Frame</figcaption></center>
+</figure>
 </div>
 </div>
 </body>
