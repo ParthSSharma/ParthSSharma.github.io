@@ -14332,7 +14332,7 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<p>Now that we had an initialized the obstacle, we needed to update it for every iteration. It was done so by following a simple algorithm:</p>
+<p>Now that we had initialized the obstacle, we needed to update it for every iteration. It was done so by following a simple algorithm:</p>
 <ul>
 <li>Update the x-coordinate of the obstacle based on the speed</li>
 <li>If the obstacle has reached the left-most edge, reset its parameters</li>
@@ -14381,6 +14381,74 @@ a.anchor-link {
 </div></p>
 <figure>
     <center><figcaption>The Moving Obstacle Frame</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="2.-Implementing-the-Dino">2. Implementing the Dino<a class="anchor-link" href="#2.-Implementing-the-Dino">&#182;</a></h4><p>Now that we had implemented the obstacle, we had to implement the Dino. Just like with implementing the obstacke, we implemented the dino using a <code>struct</code>. The dino is a little different from the ground and obstacles. Its x-coordinate is to remain constant and the y-coordinate is to change. It also needs to have a flag in order to keep track of whether the dino is alive or dead and a parameter to keep track of its velocity when it jumps. It is implemented as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">struct</span> <span class="nc">Player</span><span class="p">{</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">vy</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">alive</span><span class="p">;</span>
+<span class="p">};</span>
+<span class="k">struct</span> <span class="nc">Player</span> <span class="n">myPlayer</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We initialized the dino (<code>myPlayer</code>) in main as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span>
+<span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="mi">22</span><span class="p">;</span>
+<span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="mi">25</span><span class="p">;</span>
+<span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Now that we had initialized the dino, we needed to update it for every iteration. It was done so by simply clearing old position of the dino and drawing the new position. The jump logic was implemented later on.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">tft_fillRect</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">ILI9340_BLACK</span><span class="p">);</span>
+<span class="n">tft_fillRect</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">SOFT_COLOR</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The output obtained after running this code is given below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Dino.jfif" style="width: 446px; height: 273px;" >
+</div></p>
+<figure>
+    <center><figcaption>Implementation of the Dino</figcaption></center>
 </figure>
 </div>
 </div>
