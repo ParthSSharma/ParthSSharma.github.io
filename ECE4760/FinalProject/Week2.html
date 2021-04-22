@@ -14452,6 +14452,54 @@ a.anchor-link {
 </figure>
 </div>
 </div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="3.-Implementing-the-GUI">3. Implementing the GUI<a class="anchor-link" href="#3.-Implementing-the-GUI">&#182;</a></h4><p>In order to create the GUI, we used the <a href="https://people.ece.cornell.edu/land/courses/ece4760/PIC32/remote/target4/pic_target_4a.txt">sample code</a> provided by Prof. Bruce Land for the Lab 0 of ECE 4760 course and modified it in order to create our GUI. In particular, we changed the <code>layout</code> list to add 3 buttons to be used. We also had to bind the corrosponding <code>ButtonRelease</code> functionality.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">layout</span> <span class="o">=</span> <span class="p">[[</span><span class="n">sg</span><span class="o">.</span><span class="n">RealtimeButton</span><span class="p">(</span><span class="s1">&#39;START!&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;pushbut01&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 12&#39;</span><span class="p">),</span>
+           <span class="n">sg</span><span class="o">.</span><span class="n">RealtimeButton</span><span class="p">(</span><span class="s1">&#39;JUMP!&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;pushbut02&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 12&#39;</span><span class="p">),</span>
+           <span class="n">sg</span><span class="o">.</span><span class="n">RealtimeButton</span><span class="p">(</span><span class="s1">&#39;RESTART!&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;pushbut03&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 12&#39;</span><span class="p">)],</span>
+
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Serial data to PIC&#39;</span><span class="p">,</span> <span class="n">background_color</span> <span class="o">=</span> <span class="n">heading_color</span><span class="p">)],</span>
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">InputText</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;pic_input&#39;</span><span class="p">,</span> <span class="n">do_not_clear</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">enable_events</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">focus</span> <span class="o">=</span> <span class="kc">True</span><span class="p">),</span>
+           <span class="n">sg</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="s1">&#39;Send&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;pic_send&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 12&#39;</span><span class="p">)],</span>
+
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="s1">&#39;Serial data from PIC&#39;</span><span class="p">,</span> <span class="n">background_color</span> <span class="o">=</span> <span class="n">heading_color</span><span class="p">)],</span>
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Multiline</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;console&#39;</span><span class="p">,</span> <span class="n">autoscroll</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">enable_events</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)],</span>
+
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Text</span><span class="p">(</span><span class="s1">&#39;System Controls&#39;</span><span class="p">,</span> <span class="n">background_color</span> <span class="o">=</span> <span class="n">heading_color</span><span class="p">)],</span>
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="s1">&#39;Exit&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 12&#39;</span><span class="p">)],</span>
+          <span class="p">[</span><span class="n">sg</span><span class="o">.</span><span class="n">Checkbox</span><span class="p">(</span><span class="s1">&#39;reset_enable&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;r_en&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 8&#39;</span><span class="p">,</span> <span class="n">enable_events</span> <span class="o">=</span> <span class="kc">True</span><span class="p">),</span>
+           <span class="n">sg</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="s1">&#39;RESET PIC&#39;</span><span class="p">,</span> <span class="n">key</span> <span class="o">=</span> <span class="s1">&#39;rtg&#39;</span><span class="p">,</span> <span class="n">font</span> <span class="o">=</span> <span class="s1">&#39;Helvetica 8&#39;</span><span class="p">)</span>
+         <span class="p">]]</span>
+
+<span class="n">window</span><span class="p">[</span><span class="s1">&#39;pushbut01&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">window</span><span class="p">[</span><span class="s1">&#39;pushbut02&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">window</span><span class="p">[</span><span class="s1">&#39;pushbut03&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The complete code for the python GUI can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2PythonCode.py">here</a>. The generated GUI looks as shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2GUI.png" style="width: 450px; height: 477px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Python GUI</figcaption></center>
+</figure>
+</div>
+</div>
 </body>
 
 
