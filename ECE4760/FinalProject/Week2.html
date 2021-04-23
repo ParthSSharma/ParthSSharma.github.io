@@ -14622,7 +14622,43 @@ a.anchor-link {
   <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Jump.jfif" style="width: 446px; height: 273px;" >
 </div></p>
 <figure>
-    <center><figcaption>The Start Screen</figcaption></center>
+    <center><figcaption>The Jump Implementation</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="5.-Implementing-the-Collision-Algorithm">5. Implementing the Collision Algorithm<a class="anchor-link" href="#5.-Implementing-the-Collision-Algorithm">&#182;</a></h4><p>Now that everything was ready, we only needed to implement the collision algorithm to finish the game. To do so, we used a simple algorithm to keep a track of hitboxes and test if the hitboxes collide. Once we detect that hitboxes have collided, we simply set the alive flag to false and display the death message. It is implemented as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">((</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">)){</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">tft_setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+    <span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">SOFT_COLOR</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">60</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="s">&quot;!!!!!DEAD!!!!!&quot;</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>After implementing the collision algorithm, we tested the code out using the GUI. The result is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Dead.jfif" style="width: 446px; height: 273px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Collision Implementation</figcaption></center>
 </figure>
 </div>
 </div>
