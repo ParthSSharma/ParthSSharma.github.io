@@ -14481,6 +14481,7 @@ a.anchor-link {
 <span class="n">window</span><span class="p">[</span><span class="s1">&#39;pushbut02&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
 <span class="n">window</span><span class="p">[</span><span class="s1">&#39;pushbut03&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;&lt;ButtonRelease-1&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
 </pre></div>
+<p><br></p>
 
 </div>
 </div>
@@ -14498,6 +14499,65 @@ a.anchor-link {
 <figure>
     <center><figcaption>The Python GUI</figcaption></center>
 </figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="4.-Implementing-the-Jump-Algorithm">4. Implementing the Jump Algorithm<a class="anchor-link" href="#4.-Implementing-the-Jump-Algorithm">&#182;</a></h4><p>Now that we had created the GUI, we started working on the implementing the jump algorithm. In order to do so, we defined the gravity and the initial velocity at which it jumped. Then for every iteration, we changed the velocity based on gravity and changed the y-coordinate based on the velocity.</p>
+<p>In order implement the jump algorithm, we added a new <code>protothread</code> to serially communicate with the Python GUI. When we press the jump button, we simply change the dino velocity to a predefined velocity and increment the y-coordinate by 1. It has been implemented as below.</p>
+<p><em>Note: We also implemented the <code>Start</code> functionality to prevent the game from starting before the user is ready to play. It was quite simple to do, using the <code>startGame</code> flag.</em></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define GRAVITY 1.2</span>
+<span class="cp">#define JUM_VEL 15</span>
+
+<span class="kt">char</span> <span class="n">startGame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">newButton</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">buttonID</span><span class="p">,</span> <span class="n">buttonValue</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We initialized the start screen to display <code>Press Start</code> in the main as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">tft_setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+<span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">SOFT_COLOR</span><span class="p">);</span>
+<span class="n">tft_setCursor</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+<span class="n">tft_writeString</span><span class="p">(</span><span class="s">&quot;Press Start!&quot;</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The start screen looks as shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2StartScreen.jfif" style="width: 446px; height: 273px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Start Screen</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+
 </div>
 </div>
 </body>
