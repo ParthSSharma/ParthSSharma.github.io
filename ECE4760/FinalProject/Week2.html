@@ -14557,7 +14557,73 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Now that we had our start screen ready, we added a <code>protothread</code> to detect for <code>start</code> button press and start the game if the button is pressed. It was implemented as shown below.</p>
 
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">buttonID</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">buttonValue</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">startGame</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">startGame</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">tft_fillRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">,</span> <span class="n">ILI9340_BLACK</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Now once the game had started, we wanted to check for the jump button press. It was implemented in the same protothread as follows.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">buttonID</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">&amp;&amp;</span> <span class="n">buttonValue</span> <span class="o">==</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">startGame</span><span class="p">){</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">JUM_VEL</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Now, once we had updated the velocity and the y-coordinate of the dino, it was fairly straightforward to update the dino and make it jump up and back down. We implemented the logic in the animation thread as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">-=</span> <span class="n">GRAVITY</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>After implementing the jump algorithm, we tested the code out using the GUI. The result is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Jump.jfif" style="width: 446px; height: 273px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Start Screen</figcaption></center>
+</figure>
 </div>
 </div>
 </body>
