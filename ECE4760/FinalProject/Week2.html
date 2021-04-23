@@ -14267,6 +14267,16 @@ a.anchor-link {
 </ul>
 <p>We also used the GUI for debugging purposes.</p>
 <p>Once we had our GUI ready, we implemented the jump as well as the collision logic in our code. Once it was up and running, we implemented the voice control feature using ADC input and FFT algorithm.</p>
+<blockquote><ul>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#1.-Implementing-the-Obstacles">Implementing the Obstacles</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#2.-Implementing-the-Dino">Implementing the Dino</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#3.-Implementing-the-GUI">Implementing the GUI</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#4.-Implementing-the-Jump-Algorithm">Implementing the Jump Algorithm</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#5.-Implementing-the-Collision-Algorithm">Implementing the Collision Algorithm</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#6.-Implementing-the-Restart-Algorithm">Implementing the Restart Algorithm</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html#7.-Implementing-the-Voice-Control-Feature">Implementing the Voice Control Feature</a></li>
+</ul>
+</blockquote>
 <hr>
 
 </div>
@@ -14660,6 +14670,293 @@ a.anchor-link {
 <figure>
     <center><figcaption>The Collision Implementation</figcaption></center>
 </figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="6.-Implementing-the-Restart-Algorithm">6. Implementing the Restart Algorithm<a class="anchor-link" href="#6.-Implementing-the-Restart-Algorithm">&#182;</a></h4><p>Now that our basic game was almost ready, the only thing that was left to do was add a restart functionality after our player died. It was implemented as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">buttonID</span> <span class="o">==</span> <span class="mi">3</span> <span class="o">&amp;&amp;</span> <span class="n">buttonValue</span> <span class="o">==</span> <span class="mi">1</span><span class="p">){</span>
+    <span class="n">startGame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">tft_fillRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">,</span> <span class="n">ILI9340_BLACK</span><span class="p">);</span>
+    <span class="n">tft_setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+    <span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">SOFT_COLOR</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">100</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="s">&quot;Press Start!&quot;</span><span class="p">);</span>
+
+    <span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">obsType</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">obsType</span> <span class="o">==</span> <span class="mi">1</span><span class="p">){</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>At this stage our game was completely ready (except for the graphics using bitmaps). Therefore, we moved on to the next stage which was implementation of the voice control feature.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="7.-Implementing-the-Voice-Control-Feature">7. Implementing the Voice Control Feature<a class="anchor-link" href="#7.-Implementing-the-Voice-Control-Feature">&#182;</a></h4><p>This was probably the most challenging part of the entire project. In order to get the voice input, we used the Analog to Digital Converter (ADC). The ADC was triggered by a timer interrupt. Once we got the ADC input in an array, we fed the array to a Fast Fourier Transform (FFT) function. The FFT function computes the FFT of the input and provides a range of frequency bins. We then computed which bin has the highest power and then used the bin to compute the frequency range with most power. In order to use the ADC, we used the following parameters. Here <code>F</code> is the clock frequency and <code>Fs</code> is the sampling frequency.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define F 40000000</span>
+<span class="cp">#define Fs 4000</span>
+
+<span class="cp">#define PARAM1 ADC_FORMAT_INTG16 | ADC_CLK_AUTO | ADC_AUTO_SAMPLING_OFF</span>
+<span class="cp">#define PARAM2 ADC_VREF_AVDD_AVSS | ADC_OFFSET_CAL_DISABLE | ADC_SCAN_OFF | ADC_SAMPLES_PER_INT_1 | ADC_ALT_BUF_OFF | ADC_ALT_INPUT_OFF</span>
+<span class="cp">#define PARAM3 ADC_CONV_CLK_PB | ADC_SAMPLE_TIME_5 | ADC_CONV_CLK_Tcy2</span>
+<span class="cp">#define PARAM4 ENABLE_AN11_ANA</span>
+<span class="cp">#define PARAM5 SKIP_SCAN_ALL</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We setup Timer 2 to interrupt at 4000 Hz as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">OpenTimer2</span><span class="p">(</span><span class="n">T2_ON</span> <span class="o">|</span> <span class="n">T2_SOURCE_INT</span> <span class="o">|</span> <span class="n">T2_PS_1_1</span><span class="p">,</span> <span class="n">F</span> <span class="o">/</span> <span class="n">Fs</span><span class="p">);</span>
+<span class="n">ConfigIntTimer2</span><span class="p">(</span><span class="n">T2_INT_ON</span> <span class="o">|</span> <span class="n">T2_INT_PRIOR_2</span><span class="p">);</span>
+<span class="n">mT2ClearIntFlag</span><span class="p">();</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next, we configured the ADC to read the input as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">CloseADC10</span><span class="p">();</span>
+<span class="n">SetChanADC10</span><span class="p">(</span><span class="n">ADC_CH0_NEG_SAMPLEA_NVREF</span> <span class="o">|</span> <span class="n">ADC_CH0_POS_SAMPLEA_AN11</span><span class="p">);</span>
+<span class="n">OpenADC10</span><span class="p">(</span><span class="n">PARAM1</span><span class="p">,</span> <span class="n">PARAM2</span><span class="p">,</span> <span class="n">PARAM3</span><span class="p">,</span> <span class="n">PARAM4</span><span class="p">,</span> <span class="n">PARAM5</span><span class="p">);</span>
+<span class="n">EnableADC10</span><span class="p">();</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to read the ADC input, we used a counter variable, an input variable and a fixed point array to store the most recent 512 input values.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define nSamp 512</span>
+<span class="cp">#define nPixels 256</span>
+<span class="cp">#define N_WAVE 512</span>
+<span class="cp">#define LOG2_N_WAVE 9</span>
+
+<span class="n">_Accum</span> <span class="n">v_in</span><span class="p">[</span><span class="n">nSamp</span><span class="p">];</span>
+
+<span class="k">volatile</span> <span class="kt">int</span> <span class="n">adc_9</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">__ISR</span><span class="p">(</span><span class="n">_TIMER_2_VECTOR</span><span class="p">,</span> <span class="n">ipl2</span><span class="p">)</span> <span class="n">Timer2Handler</span><span class="p">(</span><span class="kt">void</span><span class="p">){</span>
+    <span class="n">mT2ClearIntFlag</span><span class="p">();</span>
+    <span class="n">adc_9</span> <span class="o">=</span> <span class="n">ReadADC10</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> 
+    <span class="n">AcquireADC10</span><span class="p">();</span>
+
+    <span class="n">v_in</span><span class="p">[</span><span class="n">counter</span><span class="p">]</span> <span class="o">=</span> <span class="n">int2Accum</span><span class="p">(</span><span class="n">adc_9</span><span class="p">);</span>
+    <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">counter</span> <span class="o">==</span> <span class="mi">512</span><span class="p">){</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to compute the FFT of the input signal, we used an FFT function which takes in a real array and an imaginary array as an input and returns the output in the same real and imaginary arrays. In our case, our input will completely be stored in the real array as it is a voice signal input and the imaginary array will be all 0s.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">FFTfix</span><span class="p">(</span><span class="n">_Accum</span> <span class="n">fr</span><span class="p">[],</span> <span class="n">_Accum</span> <span class="n">fi</span><span class="p">[],</span> <span class="kt">int</span> <span class="n">m</span><span class="p">){</span>
+    <span class="kt">int</span> <span class="n">mr</span><span class="p">,</span> <span class="n">nn</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">istep</span><span class="p">,</span> <span class="n">n</span><span class="p">;</span>
+    <span class="n">_Accum</span> <span class="n">qr</span><span class="p">,</span> <span class="n">qi</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">ti</span><span class="p">,</span> <span class="n">wr</span><span class="p">,</span> <span class="n">wi</span><span class="p">;</span>
+
+    <span class="n">mr</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">m</span><span class="p">;</span>
+    <span class="n">nn</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">m</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;=</span> <span class="n">nn</span><span class="p">;</span> <span class="o">++</span><span class="n">m</span><span class="p">){</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+        <span class="k">do</span><span class="p">{</span>
+            <span class="n">L</span> <span class="o">&gt;&gt;=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">mr</span> <span class="o">+</span> <span class="n">L</span> <span class="o">&gt;</span> <span class="n">nn</span><span class="p">);</span>
+        <span class="n">mr</span> <span class="o">=</span> <span class="p">(</span><span class="n">mr</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">L</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="n">L</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">mr</span> <span class="o">&lt;=</span> <span class="n">m</span><span class="p">){</span>
+            <span class="k">continue</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">fr</span><span class="p">[</span><span class="n">m</span><span class="p">];</span>
+        <span class="n">fr</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">fr</span><span class="p">[</span><span class="n">mr</span><span class="p">];</span>
+        <span class="n">fr</span><span class="p">[</span><span class="n">mr</span><span class="p">]</span> <span class="o">=</span> <span class="n">tr</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">L</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">LOG2_N_WAVE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">L</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">){</span>
+        <span class="n">istep</span> <span class="o">=</span> <span class="n">L</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">m</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">m</span> <span class="o">&lt;</span> <span class="n">L</span><span class="p">;</span> <span class="o">++</span><span class="n">m</span><span class="p">){</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="n">m</span> <span class="o">&lt;&lt;</span> <span class="n">k</span><span class="p">;</span>
+            <span class="n">wr</span> <span class="o">=</span>  <span class="n">Sinewave</span><span class="p">[</span><span class="n">j</span> <span class="o">+</span> <span class="n">N_WAVE</span> <span class="o">/</span> <span class="mi">4</span><span class="p">];</span>
+            <span class="n">wi</span> <span class="o">=</span> <span class="o">-</span><span class="n">Sinewave</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">m</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">;</span> <span class="n">i</span> <span class="o">+=</span> <span class="n">istep</span><span class="p">){</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">L</span><span class="p">;</span>
+                <span class="n">tr</span> <span class="o">=</span> <span class="p">(</span><span class="n">wr</span> <span class="o">*</span> <span class="n">fr</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">-</span> <span class="p">(</span><span class="n">wi</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+                <span class="n">ti</span> <span class="o">=</span> <span class="p">(</span><span class="n">wr</span> <span class="o">*</span> <span class="n">fi</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">wi</span> <span class="o">*</span> <span class="n">fr</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+                <span class="n">qr</span> <span class="o">=</span> <span class="n">fr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="n">qi</span> <span class="o">=</span> <span class="n">fi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">;</span>
+                <span class="n">fr</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">qr</span> <span class="o">-</span> <span class="n">tr</span><span class="p">;</span>
+                <span class="n">fi</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">qi</span> <span class="o">-</span> <span class="n">ti</span><span class="p">;</span>
+                <span class="n">fr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">qr</span> <span class="o">+</span> <span class="n">tr</span><span class="p">;</span>
+                <span class="n">fi</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">qi</span> <span class="o">+</span> <span class="n">ti</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="o">--</span><span class="n">k</span><span class="p">;</span>
+        <span class="n">L</span> <span class="o">=</span> <span class="n">istep</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We also needed to define a fixed point sine table to be used by the FFT function and initialize it in main.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">_Accum</span> <span class="n">Sinewave</span><span class="p">[</span><span class="n">N_WAVE</span><span class="p">];</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N_WAVE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">Sinewave</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">float2Accum</span><span class="p">(</span><span class="n">sin</span><span class="p">(</span><span class="mf">6.283</span> <span class="o">*</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="n">N_WAVE</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>For the final part of the voice control implementation, we implemented the FFT function to our voice input in the animation <code>protothread</code> following a simple algorithm:</p>
+<ul>
+<li>For the input array, use a windowing function (Hann Window in this case) to make the input signal periodic and store the result in <code>fr</code>.</li>
+<li>Initialize the imaginary array <code>fi</code> as all 0s.</li>
+<li>Use <code>FFTFix</code> to compute Fast Fourier Trasnform and store the result in <code>fr</code> and <code>fi</code>.</li>
+<li>For all elements, compute the magnitude of real and imaginary components using <code>Alpha Max Beta Min</code> algorithm and store it in <code>fr</code>.</li>
+<li>Compare all the magnitudes and figure out the bin with the maximum magnitude.</li>
+<li>Use the bin with maximum magnitude to compute the frequency at which the magnitude is maximum. If the frequency lies within a certain range, implement the jump algorithm.</li>
+</ul>
+<p>This Hann window was implemented as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">_Accum</span> <span class="n">window</span><span class="p">[</span><span class="n">N_WAVE</span><span class="p">];</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N_WAVE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">window</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">float2Accum</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">cos</span><span class="p">(</span><span class="mf">6.283</span> <span class="o">*</span> <span class="p">((</span><span class="kt">float</span><span class="p">)</span> <span class="n">i</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">N_WAVE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)));</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The voice detection algorithm was implemented as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define FREQ_UPPER 1800</span>
+<span class="cp">#define FREQ_LOWER 1500</span>
+
+<span class="n">_Accum</span> <span class="n">maxFreq</span><span class="p">;</span>
+
+<span class="k">for</span><span class="p">(</span><span class="n">sample_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">sample_number</span> <span class="o">&lt;</span> <span class="n">nSamp</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">sample_number</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">v_in</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">*</span> <span class="n">window</span><span class="p">[</span><span class="n">sample_number</span><span class="p">];</span> 
+    <span class="n">fi</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="p">;</span>
+<span class="p">}</span>
+<span class="n">FFTfix</span><span class="p">(</span><span class="n">fr</span><span class="p">,</span> <span class="n">fi</span><span class="p">,</span> <span class="n">LOG2_N_WAVE</span><span class="p">);</span>
+
+<span class="k">for</span><span class="p">(</span><span class="n">sample_number</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">sample_number</span> <span class="o">&lt;</span> <span class="n">nPixels</span><span class="p">;</span> <span class="n">sample_number</span><span class="o">++</span><span class="p">){</span>  
+    <span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]);</span>
+    <span class="n">fi</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">abs</span><span class="p">(</span><span class="n">fi</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]);</span>
+    <span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">=</span> <span class="n">max</span><span class="p">(</span><span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">],</span> <span class="n">fi</span><span class="p">[</span><span class="n">sample_number</span><span class="p">])</span> <span class="o">+</span> <span class="p">(</span><span class="n">min</span><span class="p">(</span><span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">],</span> <span class="n">fi</span><span class="p">[</span><span class="n">sample_number</span><span class="p">])</span> <span class="o">*</span> <span class="n">zero_point_4</span><span class="p">);</span> 
+<span class="p">}</span>
+<span class="k">static</span> <span class="n">maxPower</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+<span class="k">for</span><span class="p">(</span><span class="n">sample_number</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span> <span class="n">sample_number</span> <span class="o">&lt;=</span> <span class="n">nPixels</span><span class="p">;</span> <span class="n">sample_number</span><span class="o">++</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">fr</span><span class="p">[</span><span class="n">sample_number</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">fr</span><span class="p">[</span><span class="n">maxPower</span><span class="p">]){</span>
+        <span class="n">maxPower</span> <span class="o">=</span> <span class="n">sample_number</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">maxFreq</span> <span class="o">=</span> <span class="p">((</span><span class="n">int2Accum</span><span class="p">(</span><span class="n">Fs</span><span class="p">)</span> <span class="o">/</span> <span class="n">int2Accum</span><span class="p">(</span><span class="mi">512</span><span class="p">))</span> <span class="o">*</span> <span class="n">int2Accum</span><span class="p">(</span><span class="n">maxPower</span><span class="p">));</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">&quot;Max Power: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">Accum2int</span><span class="p">(</span><span class="n">maxFreq</span><span class="p">));</span>
+<span class="k">if</span><span class="p">(</span><span class="n">maxFreq</span> <span class="o">&lt;</span> <span class="n">int2Accum</span><span class="p">(</span><span class="n">FREQ_UPPER</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">maxFreq</span> <span class="o">&gt;</span> <span class="n">int2Accum</span><span class="p">(</span><span class="n">FREQ_LOWER</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">JUM_VEL</span><span class="p">;</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><em>Note: We start computing the maximum frequency from the $3^{rd}$ bin as there is a DC offset which will <strong>always</strong> have the maximum power.</em></p>
+<p>The complete C code for the end of week 2 can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week2Code.c">here</a>.</p>
+
 </div>
 </div>
 </body>
