@@ -14308,7 +14308,7 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h2 id="Stepping-through-the-code">Stepping through the code<a class="anchor-link" href="#Stepping-through-the-code">&#182;</a></h2><h3 id="Includes">Includes<a class="anchor-link" href="#Includes">&#182;</a></h3><p>The first lines of code in the C source file include some header files. One of these is standard C headers (<code>stdio.h</code>) and the others are headers which come from the C SDK for the Raspberry Pi Pico. The first of these, <code>pico/stdlib.h</code> is what the SDK calls a "High-Level API." These high-level API's "provide higher level functionality that isn’t hardware related or provides a richer set of functionality above the basic hardware interfaces." The architecture of this SDK is described at length in the SDK manual. All libraries within the SDK are INTERFACE libraries.</p>
-<p>The next include pulls in hardware API which is not already brought in by <code>pico/stdlib.h</code>. As the names suggest, this interface library gives us access to the API's associated with the hardware GPIO pins on the RP2040.</p>
+<p>The next include pulls in hardware API which is not already brought in by <code>pico/stdlib.h</code>. As the name suggests, this interface library gives us access to the API's associated with the hardware GPIO pins on the RP2040.</p>
 <p><strong>Don't forget to link these in the CMakeLists.txt file!</strong></p>
 
 </div>
@@ -14319,6 +14319,7 @@ a.anchor-link {
 <span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
 <span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="cp"></span>
 </pre></div>
+<p><br></p>
 
 </div>
 </div>
@@ -14332,6 +14333,7 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <div class="highlight"><pre><span></span><span class="cp">#define LED 25</span>
 </pre></div>
+<p><br></p>
 
 </div>
 </div>
@@ -14345,6 +14347,7 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <div class="highlight"><pre><span></span><span class="n">stdio_init_all</span><span class="p">();</span>
 </pre></div>
+<p><br></p>
 
 </div>
 </div>
@@ -14359,6 +14362,7 @@ a.anchor-link {
 <div class="highlight"><pre><span></span><span class="n">gpio_init</span><span class="p">(</span><span class="n">LED</span><span class="p">);</span>
 <span class="n">gpio_set_dir</span><span class="p">(</span><span class="n">LED</span><span class="p">,</span> <span class="n">GPIO_OUT</span><span class="p">);</span>
 </pre></div>
+<p><br></p>
 
 </div>
 </div>
