@@ -14429,6 +14429,117 @@ a.anchor-link {
 
 </div>
 </div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>After implementing the bitmaps, we tested the code out using the GUI. The result is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/BitmapUnoptimized.png" style="width: 600px; height: 405px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Output of Bitmap Implementation</figcaption></center>
+</figure><p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>As we can see from the result, the amount of extra time we were left with is 1 millisecond for a specific frame with the multi cactus image. This is not a lot considering that it was about 7-8 milliseconds before implementing the graphics. Therefore, there was a pressing need to optimize the process of drawing bitmap.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="5.-Optimization-of-the-tft_drawBitmap()-function">5. Optimization of the <code>tft_drawBitmap()</code> function<a class="anchor-link" href="#5.-Optimization-of-the-tft_drawBitmap()-function">&#182;</a></h4><p>In order to optimize the function, we dug into the library and studied how each function is implemented. Particularly, the <code>tft_drawBitmap()</code> function is implemented in the following manner:</p>
+<ul>
+<li>Define a <code>byteWidth</code> and counter variables <code>i</code> &amp; <code>j</code>.</li>
+<li>For all the elements in the given bitmap, check if the given pixel is set.</li>
+<li>If the given pixel is set, draw a pixel of the given color using the <code>tft_drawPixel()</code> function.</li>
+<li>Otherwise, do nothing.</li>
+</ul>
+<p>At first glance, this doesn't look particularly unoptimized. However, digging in deeper, we found that calling the <code>tft_drawPixel()</code> function for all the pixels is pretty time consuming as the <code>tft_drawPixel()</code> function is implemented as follows:</p>
+<ul>
+<li>Configure the row address.</li>
+<li>Configure the column address.</li>
+<li>Send the color to be drawn with.</li>
+</ul>
+<p>This row and column address configuration for all the pixels is quite time consuming and redundant. On the other hand, comparing it to the <code>tft_fillRect()</code> function, this function is implemented as follows:</p>
+<ul>
+<li>Set the boundary condition for the rectangle.</li>
+<li>Set the address window.</li>
+<li>For all the pixels, send the color to be drawn with.</li>
+</ul>
+<p>This function is extremely optimized as we need to set the address window only once. Therefore, we combined the two functions to create a new function called <code>drawBitmap()</code> which takes in the same set of arguments as the <code>tft_drawBitmap()</code> function (and is therefore interchangeable). It was implemented as follows:</p>
+<ul>
+<li>Set the boundary condition for the rectangle.</li>
+<li>Set the address window.</li>
+<li>For all the elements in the given bitmap, check if the given pixel is set.</li>
+<li>If the given pixel is set, send the color directly to the TFT using the <code>tft_spiwrite16()</code> function.</li>
+<li>Otherwise, send the <code>0xFFFF</code> directly to the TFT using the <code>tft_spiwrite16()</code> function to draw a black background.</li>
+</ul>
+<p><em>Note: This function assumes that the background is black in color. It can be optimized to take a different background color.</em></p>
+<p>The implemented function is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define pgm_read_byte(addr) (*(const unsigned char *)(addr))</span>
+<span class="kt">void</span> <span class="nf">drawBitmap</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">bitmap</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">_width</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">y</span> <span class="o">&gt;=</span> <span class="n">_height</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_width</span><span class="p">)</span>  <span class="n">w</span> <span class="o">=</span> <span class="n">_width</span>  <span class="o">-</span> <span class="n">x</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_height</span><span class="p">)</span> <span class="n">h</span> <span class="o">=</span> <span class="n">_height</span> <span class="o">-</span> <span class="n">y</span><span class="p">;</span>
+
+    <span class="n">tft_setAddrWindow</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">_dc_high</span><span class="p">();</span>
+    <span class="n">_cs_low</span><span class="p">();</span>
+
+    <span class="kt">short</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">byteWidth</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">h</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">w</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">pgm_read_byte</span><span class="p">(</span><span class="n">bitmap</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">byteWidth</span> <span class="o">+</span> <span class="n">i</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">128</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mi">7</span><span class="p">)))</span> <span class="p">{</span>
+                <span class="n">tft_spiwrite16</span><span class="p">(</span><span class="n">color</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span><span class="p">{</span>
+                <span class="n">tft_spiwrite16</span><span class="p">(</span><span class="mh">0x0000</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+  <span class="n">_cs_high</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>After implementing the bitmaps using our optimized function, we tested the code out again using the GUI. The result is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/ECE4760/FinalProject/Files/BitmapOptimized.png" style="width: 600px; height: 402px;" >
+</div></p>
+<figure>
+    <center><figcaption>The Output of Optimized Bitmap Implementation</figcaption></center>
+</figure><p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>As we can see from the result, the amount of extra time we were left with is 7 milliseconds for a specific frame with the multi cactus image. This is a huge improvement as compared to the unoptimized version of the code. This timing difference is even greated for larger bitmaps as there are more pixels to draw.</p>
+
+</div>
+</div>
 </body>
 
 
