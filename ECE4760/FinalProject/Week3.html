@@ -14540,6 +14540,133 @@ a.anchor-link {
 
 </div>
 </div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="6.-Implementation-of-scores">6. Implementation of scores<a class="anchor-link" href="#6.-Implementation-of-scores">&#182;</a></h4><p>At this point our game was almost ready. One small thing that was left was keeping a track of score and high score. In order to do so, we initialized two variables: <code>score</code> and <code>highScore</code>.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">int</span> <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">highScore</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to keep a track of the score, we increment the score as soon as the obstacle has passed the frame in the animation protothread. Next, we compare if the current score is greater than the high score. If it is, we change the high score.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">score</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">score</span> <span class="o">&gt;</span> <span class="n">highScore</span><span class="p">){</span>
+        <span class="n">highScore</span> <span class="o">=</span> <span class="n">score</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Moreover, we needed to add the score reset feature in the reset button functionality. Therefore, we modified the reset button condition in the button protothread by adding the following statement to it.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">score</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>At this point the score and high score were implemented. All that was left to do was print them out on the screen. In order to do so, we <code>#define</code>ed a few parameters which kept a track of the screen coordinates as to where to show the score.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define SCORE_X_OFFSET1 5</span>
+<span class="cp">#define SCORE_X_OFFSET2 150</span>
+<span class="cp">#define SCORE_Y_OFFSET1 5</span>
+<span class="cp">#define SCORE_Y_OFFSET2 30</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next, we implemented the following lines of code in the start button condition in the button protothread in order to print out the score as soon as the game starts. The <code>tft_setTextSize()</code> is used to set the size of the text to be printed. <code>tft_setTextColor()</code> is used to change the color of the text to be printed. The <code>tft_setCursor()</code> function takes in two arguments: the x-coordinate and the y-coordinate of the top left corner of the text. In order to print a string on the screen, we used the <code>tft_writeString()</code>. Lastly, in order to print some variables on the screen, we had to use the <code>sprintf()</code> function to first store the variable in a char array and then send the char array to the screen in order to print it.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">tft_setTextSize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+<span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">SOFT_COLOR</span><span class="p">);</span>
+<span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET1</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span>
+<span class="n">tft_writeString</span><span class="p">(</span><span class="s">&quot;Your Score:&quot;</span><span class="p">);</span>
+<span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET1</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span>
+<span class="n">tft_writeString</span><span class="p">(</span><span class="s">&quot;High Score:&quot;</span><span class="p">);</span>
+<span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span>
+<span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span>
+<span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span>
+<span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">highScore</span><span class="p">);</span>
+<span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next, everytime the score changes (when the obstacle moves out of the frame), we changed the text printed on the screen. We implemented it by adding the following lines in the animation protothread. We first erase the previous value of the score and highscore by printing them in black and then print the updated values using the desired color.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">if</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span>
+    <span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">ILI9340_BLACK</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">highScore</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+
+    <span class="c1">//Update the score and high score</span>
+
+    <span class="n">tft_setTextColor</span><span class="p">(</span><span class="n">SOFT_COLOR</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+    <span class="n">tft_setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">&quot;%2d&quot;</span><span class="p">,</span> <span class="n">highScore</span><span class="p">);</span>
+    <span class="n">tft_writeString</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The complete C code for the end of week 3 can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week3Code.c">here</a>. A video demonstration at the end of week 3 is attached below.</p>
+
+</div>
+</div>
 </body>
 
 
