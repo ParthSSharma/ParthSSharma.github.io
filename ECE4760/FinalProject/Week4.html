@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Dino Game</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Week 4</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,15 +14259,12 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="Voice-Controlled-Dino-Game">Voice Controlled Dino Game<a class="anchor-link" href="#Voice-Controlled-Dino-Game">&#182;</a></h1><p>As a part of the final project for <a href="https://people.ece.cornell.edu/land/courses/ece4760/">ECE 4760: Digital Systems Design Using Microcontrollers</a>, I along with Shreyas Patil (E-Mail: sp2544@cornell.edu) worked on a voice controlled version of the <a href="https://en.wikipedia.org/wiki/Dinosaur_Game">Google Dino game</a> on the PIC32 microcontroller. The microcontroller we used is a PIC32MX250F128B microcontroller on the <a href="https://people.ece.cornell.edu/land/courses/ece4760/PIC32/target_board.html">SECABB</a> development board.</p>
-
-</div>
-</div>
-<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
-</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h1 id="Week-4">Week 4<a class="anchor-link" href="#Week-4">&#182;</a></h1><p>During week 4 of the project, we worked on adding the sound effects. In order to do so, we first used MATLAB to convert some <code>wav</code> audio files into a large array and then used that array to send data directly to the DAC using DMA.</p>
+<p>Next, we tweaked the background color a bit to make the display more presentable.</p>
 <blockquote><ul>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Dino.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Dino.html#Weekly-Progress">Weekly Progress</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week4.html#1.-Converting-audio-files-to-arrays">The graphic images</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week4.html#2.-Creating-the-audio-header-file">Converting images to bitmaps</a></li>
+<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week4.html#3.-Implementing-audio-using-DMA">Creating the bitmap header</a></li>
 </ul>
 </blockquote>
 <hr>
@@ -14276,22 +14273,181 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>We have all been in a situation where we didn’t have access to the internet and to pass time we started playing the Google Dino game. However, the game tends to get a little monotonous with all the key presses and the biggest fear is that if we regain the internet connection, we might lose the progress, especially if we are about to beat a high score. Therefore, for our final project, we wanted to create our own version of the Dino game using the PIC32 microcontroller and the TFT screen. That way, we could play the game any time we wanted without the fear of losing progress by regaining the internet connection.</p>
-<hr>
+<h2 id="The-Design">The Design<a class="anchor-link" href="#The-Design">&#182;</a></h2><h4 id="1.-Converting-audio-files-to-arrays">1. Converting audio files to arrays<a class="anchor-link" href="#1.-Converting-audio-files-to-arrays">&#182;</a></h4><p>In order to add the audio in game, we first had to covert it into a form which can directly be read by the microcontroller. Moreover, it had to be in a format that can be directly pushed to the DAC. Hence, we also had to append the 4 DAC configuration bits in the MSB of each element of the audio array. To do so, we used a MATLAB script which can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/ConvertAudioToArray.txt">here</a>.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Weekly-Progress">Weekly Progress<a class="anchor-link" href="#Weekly-Progress">&#182;</a></h2><p>Since this is an end semester project, we only have roughly 4 weeks to finish the project. Therefore, I documented this in the form of a weekly report.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week1.html">Week 1</a></li>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week2.html">Week 2</a></li>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week3.html">Week 3</a></li>
-<li><a href="https://parthssharma.github.io/ECE4760/FinalProject/Week4.html">Week 4</a></li>
-</ul>
-</blockquote>
-<hr>
+<p>First, we defined the upper and lower bounds of the audio file in terms of the audio sample number. This was done to remove any unwanted sections of the audio. Next, we defined the <code>FILE_NAME</code> and the <code>TEXT_FILE</code>. These are the audio input file name and the output text file name respectively. Lastly, we defined the <code>BitRate</code> which is the new sampling frequency of the audio. This was done to reduce the size of the audio array. <em>Note: Reducing the bitrate of the audio also reduces the audio quality.</em></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">UPPER_RANGE</span> <span class="o">=</span> <span class="o">%</span><span class="n">Your</span> <span class="n">Upper</span> <span class="n">Range</span><span class="o">%</span>
+<span class="n">LOWER_RANGE</span> <span class="o">=</span> <span class="o">%</span><span class="n">Your</span> <span class="n">Upper</span> <span class="n">Range</span><span class="o">%</span>
+<span class="n">FILE_NAME</span> <span class="o">=</span> <span class="o">%</span><span class="n">Audio</span> <span class="n">File</span> <span class="n">Name</span><span class="o">%</span>
+<span class="n">TEXT_FILE</span> <span class="o">=</span> <span class="o">%</span><span class="n">Text</span> <span class="n">File</span> <span class="n">Name</span><span class="o">%</span>
+<span class="n">BitRate</span> <span class="o">=</span> <span class="mi">8000</span>
+<span class="n">Range</span> <span class="o">=</span> <span class="p">[</span><span class="n">LOWER_RANGE</span><span class="p">,</span> <span class="n">UPPER_RANGE</span><span class="p">];</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next we used the <code>audioread()</code> function to read the audio file into an array <code>y</code> and get its default sampling frequency <code>Fs</code>. In order to change the sampling frequency, we used the <code>resample()</code> function to change its bitrate. <em>Note: This function requires the DSP toolbox to be installed in MATLAB to work properly.</em> The audio file we read was a 2 channel audio, hence we sliced it down to a single channel and stored it in <code>ys</code> as a column matrix. The amplitude of the audio input stored in <code>ys</code> ranges from -1 to 1. However, we have a 12-bit DAC. Therefore, we had to rescale the amplitude from 0 to 4095. This was done using the <code>rescale()</code> function. Laslty, we force casted each element of the audio to a <code>uint16</code> data type in order to make it compatible with the DAC.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">Fs</span><span class="p">]</span> <span class="o">=</span> <span class="n">audioread</span><span class="p">(</span><span class="n">FILE_NAME</span><span class="p">,</span> <span class="n">Range</span><span class="p">);</span>
+<span class="n">yn</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">BitRate</span><span class="p">,</span> <span class="n">Fs</span><span class="p">);</span>
+<span class="n">ys</span> <span class="o">=</span> <span class="n">yn</span><span class="p">(</span><span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="n">yqfinal</span> <span class="o">=</span> <span class="n">rescale</span><span class="p">(</span><span class="n">ys</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">4095</span><span class="p">);</span>
+<span class="n">ysfinal</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">yqfinal</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">uint16</span><span class="err">&#39;</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We then opened the text file in write mode using the <code>fopen()</code> function. Then we used a <code>for</code> loop to traverse through every element of the audio array and append the DAC configuration bits to it by performing a bitwise <code>OR</code> operation using the <code>bitor()</code> function. The elements are then written into the text file using the <code>fprintf()</code> function. After all elements are written in the text file, we closed the file using the <code>fclose()</code> function.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">TEXT_FILE</span><span class="p">,</span> <span class="sc">&#39;w&#39;</span><span class="p">);</span>
+<span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">length</span><span class="p">(</span><span class="n">ysfinal</span><span class="p">)</span>
+    <span class="n">yfinal</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">bitor</span><span class="p">(</span><span class="n">ysfinal</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="mb">0b0011000000000000</span><span class="p">);</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s">&quot;%d, &quot;</span><span class="p">,</span> <span class="n">yfinal</span><span class="p">(</span><span class="n">i</span><span class="p">));</span>
+<span class="n">end</span>
+<span class="nf">fclose</span><span class="p">(</span><span class="n">file</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="2.-Creating-the-audio-header-file">2. Creating the audio header file<a class="anchor-link" href="#2.-Creating-the-audio-header-file">&#182;</a></h4><p>The above conversion was repeated for all audio files and we stored the resultant arrays in a file called <code>Audio.h</code> which can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Audio.h">here</a>. Every single array is of the type <code>const unsigned short</code>. We used <code>const</code> because the audio will remain constant throught the execution of the program and will be stored in the flash memory.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="3.-Implementing-audio-using-DMA">3. Implementing audio using DMA<a class="anchor-link" href="#3.-Implementing-audio-using-DMA">&#182;</a></h4><p>In order to implement the audio functionality, we used Direct Memory Access (DMA). We chose DMA because it is a hardware peripheral functionality and as a result doesn't use up any clock cycles to run. Moreover, once setup, it can be triggered from any point in the code. We implemented the code as below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We first included the audio library.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;Audio.h&quot;</span><span class="cp"></span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>We the defined a few parameters. These are namely the number of bytes in the audio arrays (twice the number of elements in the arrays since it is a short data type) and the DMA channels (we are using channels 2 and 3 as channels 0 and 1 are used by the <code>serial</code> protothread). We also defined a <code>SPI_CLK_DIV</code> as the maximum SPI frequency is 20MHz.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define JUMP_AUDIO_SIZE 23156 </span>
+<span class="cp">#define DEAD_AUDIO_SIZE 35670</span>
+<span class="cp">#define DMA_CHANNEL2 2</span>
+<span class="cp">#define DMA_CHANNEL3 3</span>
+<span class="cp">#define SPI_CLK_DIV 2</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to use the DMA, we need to configure a timer which overflows and throws an interrupt at the same rate as the bitrate of the audio. This is to ensure that the audio is played at the correct frequency. In order to do so, we used the <code>Timer 3</code> in PIC32 and configured it to throw an interrupt after every 5000 CPU cycles (since our bitrate is 8kHz and the CPU frequency is 40MHz).</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">OpenTimer3</span><span class="p">(</span><span class="n">T3_ON</span> <span class="o">|</span> <span class="n">T3_SOURCE_INT</span> <span class="o">|</span> <span class="n">T3_PS_1_1</span><span class="p">,</span> <span class="mi">5000</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next, we configured the SPI channel 2 to communicate with the DAC. To do so, we enabled the SPI in 16-bit mode and in the master configuration. We also used <code>SPICON_FRMEN</code> and <code>SPICON_FRMPOL</code> flags to ensure that the SPI is configured in the framed SPI mode as we cannot toggle the chip select line in software while using DMA. Next, we mapped the SPI data out pin to <code>RPB5</code> and the SPI chip select line to <code>RPA3</code> pin on the board.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">SpiChnOpen</span><span class="p">(</span><span class="n">SPI_CHANNEL2</span><span class="p">,</span> <span class="n">SPI_OPEN_ON</span> <span class="o">|</span> <span class="n">SPI_OPEN_MODE16</span> <span class="o">|</span> <span class="n">SPI_OPEN_MSTEN</span> <span class="o">|</span> <span class="n">SPI_OPEN_CKE_REV</span> <span class="o">|</span> <span class="n">SPICON_FRMEN</span> <span class="o">|</span> <span class="n">SPICON_FRMPOL</span><span class="p">,</span> <span class="n">SPI_CLK_DIV</span><span class="p">);</span>
+<span class="n">PPSOutput</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">RPB5</span><span class="p">,</span> <span class="n">SDO2</span><span class="p">);</span>
+<span class="n">PPSOutput</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">RPA3</span><span class="p">,</span> <span class="n">SS2</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to open the DMA channel, we used the <code>DmaChnOpen()</code> command. We used the higher priority for <code>deadAudio</code> as that takes priority over jumps. Moreover, we used the <code>DMA_OPEN_DEFAULT</code> flag as we want our audio samples to play only once and then stop. Next, in order to configure the transfers, we used the <code>DmaChnSetTxfer()</code> function to set the transfer parameters. It takes in the arguments as the dma channel, the source address, the destination address, the source size, the destination size and the transferred cell size in the given order. Lastly, we setup the DMA event control to timer 3 IRQ as it will control the DMA transfers once the DMA channel has been enabled.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">DmaChnOpen</span><span class="p">(</span><span class="n">DMA_CHANNEL2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">DMA_OPEN_DEFAULT</span><span class="p">);</span>
+<span class="n">DmaChnSetTxfer</span><span class="p">(</span><span class="n">DMA_CHANNEL2</span><span class="p">,</span> <span class="n">jumpAudio</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">SPI2BUF</span><span class="p">,</span> <span class="n">JUMP_AUDIO_SIZE</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">DmaChnSetEventControl</span><span class="p">(</span><span class="n">DMA_CHANNEL2</span><span class="p">,</span> <span class="n">DMA_EV_START_IRQ</span><span class="p">(</span><span class="n">_TIMER_3_IRQ</span><span class="p">));</span>
+
+<span class="n">DmaChnOpen</span><span class="p">(</span><span class="n">DMA_CHANNEL3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">DMA_OPEN_DEFAULT</span><span class="p">);</span>
+<span class="n">DmaChnSetTxfer</span><span class="p">(</span><span class="n">DMA_CHANNEL3</span><span class="p">,</span> <span class="n">deadAudio</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">SPI2BUF</span><span class="p">,</span> <span class="n">DEAD_AUDIO_SIZE</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">DmaChnSetEventControl</span><span class="p">(</span><span class="n">DMA_CHANNEL3</span><span class="p">,</span> <span class="n">DMA_EV_START_IRQ</span><span class="p">(</span><span class="n">_TIMER_3_IRQ</span><span class="p">));</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>In order to play the audio, we used the <code>DmaChnEnable()</code> function to start DMA transfers to the DAC. This function is called whenever the dino jumps to play the jump audio or the dino dies to play the death audio.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>The complete C code for the end of week 4 can be found <a href="https://parthssharma.github.io/ECE4760/FinalProject/Files/Week4Code.c">here</a>. A video demonstration at the end of week 4 is attached below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/VWI1axdjxc8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+    </iframe>
+</div></p>
+<figure>
+    <center><figcaption>Implementation of the audio functionality in the Dino game</figcaption></center>
+</figure><hr>
 
 </div>
 </div>
