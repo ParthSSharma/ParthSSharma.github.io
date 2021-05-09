@@ -14456,7 +14456,7 @@ a.anchor-link {
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Expected-vs-actual-output">Expected vs actual output<a class="anchor-link" href="#Expected-vs-actual-output">&#182;</a></h2><p>I used the clock divider to be 4. Therefore, the PWM interrup was being called at $\frac{\text{sys_clk}}{4} = \frac{125}{4}\text{MHz} = 31.25$ MHz. Moreover, 1 PWM cycle consists of 65536 interrupt cycles. Therefore, the PWM frequency that should be generated is $\frac{\text{interrupt frequency}}{65536} = \frac{31.25}{65536}\text{MHz} = 476.83$ Hz.</p>
+<h2 id="Expected-vs-actual-output">Expected vs actual output<a class="anchor-link" href="#Expected-vs-actual-output">&#182;</a></h2><p>I used the clock divider to be 4. Therefore, the PWM interrupt was being called at $\frac{\text{sys_clk}}{4} = \frac{125}{4}\text{MHz} = 31.25$ MHz. Moreover, 1 PWM cycle consists of 65536 interrupt cycles. Therefore, the PWM frequency that should be generated is $\frac{\text{interrupt frequency}}{65536} = \frac{31.25}{65536}\text{MHz} = 476.83$ Hz.</p>
 <p>The scope trace below shows the PWM output from the LED pin. The text in the top left corner of the screen confirms that the frequency of the generated PWM wave is infact 476.9 Hz.</p>
 <p>Moreover, when I change rotate the potentiometer, it also changes the duty cycle of the PWM signal and behaves as it should.</p>
 
