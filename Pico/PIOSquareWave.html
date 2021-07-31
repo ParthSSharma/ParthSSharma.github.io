@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>PIO Square Wave</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,97 +14259,190 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="PIO-Square-Wave">PIO Square Wave<a class="anchor-link" href="#PIO-Square-Wave">&#182;</a></h1><p>This program was an extension of the introduction to the Programmable Input Output (PIO) on the Raspberry Pi Pico. There are 2 identical PIO blocks in RP2040. Each PIO block has dedicated connections to the bus fabric, GPIO and interrupt controller. These are programmable in the same sense as a processor. There are two PIO blocks with four state machines each, that can independently execute sequential programs to manipulate GPIOs and transfer data. Unlike a general purpose processor, PIO state machines are highly specialised for IO, with a focus on determinism, precise timing, and close integration with fixed-function hardware.  The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
-<hr>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="PIOMaxSquareWave.c">PIOMaxSquareWave.c<a class="anchor-link" href="#PIOMaxSquareWave.c">&#182;</a></h3><div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * The code initializes a PIO state machine on a given</span>
+<span class="cm"> * GPIO and generates a square wave.</span>
+<span class="cm"> */</span>
+
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> /Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="c1"> //The hardware PIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;PIOMaxSqaureWave.pio.h&quot;</span><span class="c1"> //The pio header created after compilation</span><span class="cp"></span>
+
+<span class="cp">#define PIN 6 </span><span class="c1">//Define the GPIO Pin</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span> <span class="c1">//The main function</span>
+    <span class="n">PIO</span> <span class="n">pio</span> <span class="o">=</span> <span class="n">pio0</span><span class="p">;</span> <span class="c1">//Identifier for the first (PIO 0) hardware PIO instance</span>
+    <span class="n">uint</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">pio_add_program</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">PIOMaxSqaureWave_program</span><span class="p">);</span> <span class="c1">//Attempt to load the program</span>
+    <span class="n">uint</span> <span class="n">sm</span> <span class="o">=</span> <span class="n">pio_claim_unused_sm</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span> <span class="c1">//Claim a free state machine on a PIO instance</span>
+    <span class="n">PIOMaxSqaureWave_program_init</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">PIN</span><span class="p">,</span> <span class="mf">625.0f</span><span class="p">);</span> <span class="c1">//Initialize the program</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//Empty eternity</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
+<h3 id="PIOMaxSqaureWave.pio">PIOMaxSqaureWave.pio<a class="anchor-link" href="#PIOMaxSqaureWave.pio">&#182;</a></h3>
+<pre><code>assembly
+.program PIOMaxSqaureWave ;Program name
+
+;Generate a square wave on a GPIO pin
+
+    set pindirs, 1 ;Set pin direction to output
+.wrap_target ;Free 0 cycle unconditional jump
+    set pins, 1 ;Drive pins high
+    set pins, 0 ;Drive pins low
+.wrap
+
+;Helper function
+
+%c-sdk{
+    static inline void PIOMaxSqaureWave_program_init(PIO pio, uint sm, uint offset, uint pin, float clk_div){ //Program to initialize the PIO
+        pio_sm_config c = PIOMaxSqaureWave_program_get_default_config(offset); //Get default configurations for the PIO state machine
+        sm_config_set_set_pins(&amp;c, pin, 1); //Set the state machine configurations on the given pin
+        sm_config_set_clkdiv(&amp;c, clk_div); //Set the state machine clock divider
+        pio_gpio_init(pio, pin); //Setup the function select for a GPIO to use output from the given PIO instance
+        pio_sm_set_consecutive_pindirs(pio, sm, pin, 1, true); //Use a state machine to set the same pin direction for multiple consecutive pins for the PIO instance
+        pio_sm_init(pio, sm, offset, &amp;c); //Resets the state machine to a consistent state, and configures it
+        pio_sm_set_enabled(pio, sm, true); //Enable or disable a PIO state machine
+    }
+%}</code></pre>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
+<h2 id="Stepping-through-the-code">Stepping through the code<a class="anchor-link" href="#Stepping-through-the-code">&#182;</a></h2><h3 id="Includes">Includes<a class="anchor-link" href="#Includes">&#182;</a></h3><p>The first lines of code in the C source file include some header files. The headers which come from the C SDK for the Raspberry Pi Pico include <code>pico/stdlib.h</code> is what the SDK calls a "High-Level API." These high-level API's "provide higher level functionality that isn’t hardware related or provides a richer set of functionality above the basic hardware interfaces." The architecture of this SDK is described at length in the SDK manual. All libraries within the SDK are INTERFACE libraries.</p>
+<p>The next includes pull in hardware APIs which are not already brought in by pico/stdlib.h. These include <code>hardware/pio.h</code> and <code>PIOMaxSqaureWave.pio.h</code>. As the names suggest, these interface libraries give us access to the API's associated with the hardware and the custom square wave pio file created in the directory on the RP2040.</p>
+<p><strong>Don't forget to link these in the CMakeLists.txt file!</strong></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;PIOMaxSqaureWave.pio.h&quot;</span><span class="cp"></span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="Global-declarations-and-defines">Global declarations and defines<a class="anchor-link" href="#Global-declarations-and-defines">&#182;</a></h3><p>The next section of the code is basically a single line which <code>#define</code>'s the GPIO pin number to read the square wave on.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define PIN 6</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="The-main-function">The main function<a class="anchor-link" href="#The-main-function">&#182;</a></h3><h4 id="Initializing-the-PIO">Initializing the PIO<a class="anchor-link" href="#Initializing-the-PIO">&#182;</a></h4><p>The first line in the <code>main()</code> initializes the PIO instance. The <code>pio_add_program()</code> function loads the program definition and returns the instruction memory offset the program is loaded at. The <code>pio_claim_unused_sm()</code> function is used to claim a free state machine on a PIO instance. Lastly, the <code>PIOMaxSqaureWave_program_init()</code> is called with the given parameters in order to finish configuring the PIO with the given pins and program.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">PIO</span> <span class="n">pio</span> <span class="o">=</span> <span class="n">pio0</span><span class="p">;</span>
+<span class="n">uint</span> <span class="n">offset</span> <span class="o">=</span> <span class="n">pio_add_program</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">PIOMaxSqaureWave_program</span><span class="p">);</span>
+<span class="n">uint</span> <span class="n">sm</span> <span class="o">=</span> <span class="n">pio_claim_unused_sm</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+<span class="n">PIOMaxSqaureWave_program_init</span><span class="p">(</span><span class="n">pio</span><span class="p">,</span> <span class="n">sm</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">PIN</span><span class="p">,</span> <span class="mf">625.0f</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="The-infinite-while-loop">The infinite while loop<a class="anchor-link" href="#The-infinite-while-loop">&#182;</a></h4><p>The infinite while loop for this program is an empty while loop which serves only to keep the core running and not let it exit.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="Expected-vs-actual-output">Expected vs actual output<a class="anchor-link" href="#Expected-vs-actual-output">&#182;</a></h2><p>In order to view the output, I used the GPIO pin 6 and attached an oscilloscope to it. Since, the clock divider is 625, the effective clock frequency for the PIO is $clk_{eff} = \frac{\text{clock frequency}}{625} = 200 KHz$. Each instruction takes a clock cycle to execute, therefore, the expected square wave frequency is $sq_{freq} = \frac{\text{200000}}{2} = 100 KHz$.</p>
+<p>The scope trace below shows the output from the GPIO pin 6. The text in the top left corner of the screen confirms that the frequency of the generated wave is infact 100.490 KHz. We've obtained a square wave which is quite close to the expected result.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/PIOSqWaveOutput.jpeg" style="width: 600px; height: 448px;" >
+</div></p>
+<figure>
+    <center><figcaption>Output of the Square Wave PIO code</figcaption></center>
+</figure><hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span> <span class="s">PIOMaxSqaureWave.c</span><span class="p">)</span>
+
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/PIOMaxSqaureWave.pio</span><span class="p">)</span>
+
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span> <span class="s">0</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">PIOMaxSqaureWave</span> <span class="s">pico_stdlib</span> <span class="s">hardware_pio</span><span class="p">)</span>
+</pre></div>
+<hr>
+<p><br></p>
 
 </div>
 </div>
