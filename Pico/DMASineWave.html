@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Generating Sine wave using DMA</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,106 +14259,465 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Generating-Sine-wave-using-DMA">Generating Sine wave using DMA<a class="anchor-link" href="#Generating-Sine-wave-using-DMA">&#182;</a></h1><p>This project was meant to provide an objective through which to build understanding of DMA and SPI channels on the RP2040. For this project, I chained two DMA channels. One of those channels is triggered by a timer which is configured to overflow at a fixed given interval. This channel moves data from a sine table to the SPI transmit buffer. The SPI channel is configured to automatically transmit any new data which appears in its transmit buffer.</p>
+<p>The other DMA channel is chained to the first. When the first DMA channel finishes traversing the sine table, it triggers the second channel. This channel writes to the <em>control registers</em> of the first DMA channel. In particular, it writes to the <code>AL3_TRANS_COUNT_TRIG</code> register associated with the other DMA channel. This control register sets the number of transactions that the first DMA channel should execute (the length of the sine table). Because it is a trigger register, writing any non-zero value to this register automatically triggers the DMA channel to start. So, these two channels ping-pong off one another. The first finishes and triggers the second, the second writes to the control/trigger register of the first. The consequence is a persistent sine wave output from the DAC, with no code executing.</p>
+<p>I used an <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/20002249B.pdf">MCP4822 DAC</a> to generate a sine wave of a given frequency. The Pico transmits data to the DAC using SPI. The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * The code sets up two DMA channels. One sends samples to the DAC,</span>
+<span class="cm"> * (data_chan), and the other writes to the data_chan DMA control</span>
+<span class="cm"> * registers (ctrl_chan).</span>
+<span class="cm"> * The control channel writes to the data channel, sending one period of</span>
+<span class="cm"> * a sine wave thru the DAC. The control channel is chained to the data</span>
+<span class="cm"> * channel, so it is re-triggered after the data channel is finished. The control</span>
+<span class="cm"> * channel then rewrites and restarts the data channel, etc.</span>
+<span class="cm"> * NOTE: in order to configure the data channel read addresses to </span>
+<span class="cm"> * wrap properly, the DAC data buffer must be naturally aligned in memory.</span>
+<span class="cm"> * The solution was to use the ((aligned())) attribute.  </span>
+<span class="cm"> */</span>
+
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/dma.h&quot;</span><span class="c1"> //The hardware DMA library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //Standard math library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/spi.h&quot;</span><span class="c1"> //The hardware SPI library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="c1"> //The pico time library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/adc.h&quot;</span><span class="c1"> //The hardware ADC library</span><span class="cp"></span>
+
+<span class="cp">#define SIZE 256 </span><span class="c1">//The size of the sine table</span>
+
+<span class="kt">int</span> <span class="n">sinTable</span><span class="p">[</span><span class="n">SIZE</span><span class="p">];</span> <span class="c1">//The sine table</span>
+<span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">DACData</span><span class="p">[</span><span class="n">SIZE</span><span class="p">]</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">2048</span><span class="p">)));</span> <span class="c1">//The DAC data table</span>
+
+<span class="cp">#define DAC_config_chan_A 0b0011000000000000 </span><span class="c1">//The DAC configuration bits</span>
+
+<span class="cp">#define CS 17 </span><span class="c1">//The chip-select pin</span>
+<span class="cp">#define MOSI 19 </span><span class="c1">//The MOSI pin</span>
+<span class="cp">#define MISO 16 </span><span class="c1">//The MISO pin</span>
+<span class="cp">#define SCK 18 </span><span class="c1">//The clock pin</span>
+<span class="cp">#define SPI_PORT spi0 </span><span class="c1">//The SPI port to be used</span>
+
+<span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">tranCount</span> <span class="o">=</span> <span class="n">SIZE</span><span class="p">;</span> <span class="c1">//The transaction count</span>
+
+<span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">timerval</span><span class="p">){</span> <span class="c1">//The function to change the timer value in the DMA channel</span>
+    <span class="n">dma_hw</span><span class="o">-&gt;</span><span class="n">timer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">timerval</span><span class="p">;</span>
+<span class="p">}</span>
+
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">(){</span> <span class="c1">//The program running on core 0</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span> <span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+
+    <span class="n">adc_init</span><span class="p">();</span> <span class="c1">//Initialise the ADC hardware</span>
+    <span class="n">adc_gpio_init</span><span class="p">(</span><span class="mi">26</span><span class="p">);</span> <span class="c1">//Initialise the gpio for use as an ADC pin</span>
+    <span class="n">adc_select_input</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">//Select an ADC input. 0...3 are GPIOs 26...29 respectively</span>
+
+    <span class="n">spi_init</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">,</span> <span class="mi">20000000</span><span class="p">);</span> <span class="c1">//Initialise SPI instance with the given baud rate</span>
+    <span class="n">gpio_set_function</span><span class="p">(</span><span class="n">MOSI</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span> <span class="c1">//Select GPIO function on the pin</span>
+    <span class="n">gpio_set_function</span><span class="p">(</span><span class="n">MISO</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span> <span class="c1">//Select GPIO function on the pin</span>
+    <span class="n">gpio_set_function</span><span class="p">(</span><span class="n">SCK</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span> <span class="c1">//Select GPIO function on the pin</span>
+    <span class="n">gpio_set_function</span><span class="p">(</span><span class="n">CS</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span> <span class="c1">//Select GPIO function on the pin</span>
+    <span class="n">spi_set_format</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">//Configure SPI with number of bits in each transaction, SPI mode (0, 0) and SPI order</span>
+
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span> <span class="c1">//The counter i</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For the sine table size</span>
+        <span class="n">sinTable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)(</span><span class="mi">2047</span> <span class="o">*</span> <span class="n">sin</span><span class="p">((</span><span class="kt">float</span><span class="p">)</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">6.283</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="n">SIZE</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2047</span><span class="p">);</span> <span class="c1">//Create the sine table</span>
+        <span class="n">DACData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">DAC_config_chan_A</span> <span class="o">|</span> <span class="p">(</span><span class="n">sinTable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x0fff</span><span class="p">);</span> <span class="c1">//Create the DAC data by masking sine table</span>
+    <span class="p">}</span>
+
+    <span class="kt">int</span> <span class="n">dataChannel</span> <span class="o">=</span> <span class="n">dma_claim_unused_channel</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span> <span class="c1">//The data channel</span>
+    <span class="kt">int</span> <span class="n">controlChannel</span> <span class="o">=</span> <span class="n">dma_claim_unused_channel</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span> <span class="c1">//The control channel</span>
+
+    <span class="n">dma_channel_config</span> <span class="n">c</span> <span class="o">=</span> <span class="n">dma_channel_get_default_config</span><span class="p">(</span><span class="n">controlChannel</span><span class="p">);</span> <span class="c1">//Get configurations for control channel</span>
+    <span class="n">channel_config_set_transfer_data_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="n">DMA_SIZE_32</span><span class="p">);</span> <span class="c1">//Set control channel data transfer size to 32 bits</span>
+    <span class="n">channel_config_set_read_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span> <span class="c1">//Set control channel read increment to false</span>
+    <span class="n">channel_config_set_write_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span> <span class="c1">//Set control channel write increment to false</span>
+
+    <span class="n">dma_channel_configure</span><span class="p">(</span><span class="n">controlChannel</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dma_hw</span><span class="o">-&gt;</span><span class="n">ch</span><span class="p">[</span><span class="n">dataChannel</span><span class="p">].</span><span class="n">al1_transfer_count_trig</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tranCount</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span> <span class="c1">//Configure control channel to write to data channel&#39;s al1_transfer_count_trig register</span>
+
+    <span class="n">dma_channel_config</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">dma_channel_get_default_config</span><span class="p">(</span><span class="n">dataChannel</span><span class="p">);</span> <span class="c1">//Get configurations for data channel</span>
+    <span class="n">channel_config_set_transfer_data_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="n">DMA_SIZE_16</span><span class="p">);</span> <span class="c1">//Set control channel data transfer size to 16 bits</span>
+    <span class="n">channel_config_set_read_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span> <span class="c1">//Set control channel read increment to true</span>
+    <span class="n">channel_config_set_write_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span> <span class="c1">//Set control channel write increment to false</span>
+
+    <span class="c1">//(X / Y) * sys_clk, where X is the first 16 bytes and Y is the second</span>
+    <span class="c1">//sys_clk is 125 MHz unless changed in code</span>
+    <span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="mh">0x0017ffff</span><span class="p">);</span> <span class="c1">//Write 0x0017ffff to timer 0 so that it gives a rate of 43869 (44kHz approx.)</span>
+
+    <span class="n">channel_config_set_dreq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="mh">0x3b</span><span class="p">);</span> <span class="c1">//Select a transfer request signal. 0x3b means timer0</span>
+    <span class="n">channel_config_set_chain_to</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="n">controlChannel</span><span class="p">);</span> <span class="c1">//When this channel completes, it will trigger the channel indicated by chain_to</span>
+    <span class="n">channel_config_set_ring</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span> <span class="c1">//Set address wrapping parameters</span>
+
+    <span class="n">dma_channel_configure</span><span class="p">(</span><span class="n">dataChannel</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">spi_get_hw</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">dr</span><span class="p">,</span> <span class="n">DACData</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span> <span class="c1">//Configure data channel to write to SPI port&#39;s dr register</span>
+
+    <span class="n">dma_start_channel_mask</span><span class="p">(</span><span class="mi">1u</span> <span class="o">&lt;&lt;</span> <span class="n">controlChannel</span><span class="p">);</span> <span class="c1">//Start control channel</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//While eternity</span>
+        <span class="kt">int</span> <span class="n">adcIn</span> <span class="o">=</span> <span class="n">adc_read</span><span class="p">();</span> <span class="c1">//Read the ADC value</span>
+        <span class="kt">int</span> <span class="n">timerVal</span> <span class="o">=</span> <span class="p">(((</span><span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="n">adcIn</span> <span class="o">/</span> <span class="mf">7.45064</span><span class="p">))</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="mi">65535</span><span class="p">;</span> <span class="c1">//Get the timer value by calculating X, left shifting it by 16 bits and adding 0xFFFF</span>
+        <span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="n">timerVal</span><span class="p">);</span> <span class="c1">//Change the timer value</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
+<h2 id="Stepping-through-the-code">Stepping through the code<a class="anchor-link" href="#Stepping-through-the-code">&#182;</a></h2><h3 id="Includes">Includes<a class="anchor-link" href="#Includes">&#182;</a></h3><p>The first lines of code in the C source file include some header files. One of these is standard C headers (<code>stdio.h</code>) and the standard math header(<code>math.h</code>). The others are headers which come from the C SDK for the Raspberry Pi Pico. The first of these, <code>pico/stdlib.h</code> is what the SDK calls a "High-Level API." These high-level API's "provide higher level functionality that isn’t hardware related or provides a richer set of functionality above the basic hardware interfaces." The architecture of this SDK is described at length in the SDK manual. All libraries within the SDK are INTERFACE libraries.</p>
+<p>The next includes pull in hardware APIs which are not already brought in by <code>pico/stdlib.h</code>. These include <code>hardware/gpio.h</code>, <code>hardware/adc.h</code>, <code>hardware/irq.h</code>, <code>hardware/spi.h</code>, <code>pico/time.h</code> and <code>hardware/dma.h</code>. As the names suggest, these interface libraries give us access to the API's associated with the hardware GPIO, hardware adc, hardware irq, hardware spi, pico time and hardware dma on the RP2040.</p>
+<p><strong>Don't forget to link these in the CMakeLists.txt file!</strong></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/adc.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/irq.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/spi.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/dma.h&quot;</span><span class="cp"></span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="Global-declarations-and-defines">Global declarations and defines<a class="anchor-link" href="#Global-declarations-and-defines">&#182;</a></h3><p>The next section of the code is the <code>#define</code>'s and the global variables which will be used throughout the code.</p>
+<p>The following are the <code>#define</code>'s to be used throughout the code:</p>
 <ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
+<li>Chip Select pin</li>
+<li>Master Out Slave In pin</li>
+<li>Master In Slave Out pin</li>
+<li>The Serial Clock pin</li>
+<li>The SPI Port</li>
+<li>The number of elements in the sine table</li>
+<li>The configuration bits (to be used as a mask) for the DAC</li>
 </ul>
-<hr>
+<p>The following are the variables to be used throughout the code:</p>
+<ul>
+<li>The sine lookup table to contain the amplitudes for a single period of a sine wave</li>
+<li>The modified DAC data which is memory aligned</li>
+<li>The number of transfers which is equal to the size</li>
+</ul>
+<p><em>Note: I have aligned the <code>DACData</code> array in memory. The reason for this will become obvious later in the code, but this is so that I can use the <code>channel_config_set_ring</code> option for the DMA channel, so that it will wrap its read address at the end of the array and start reading again at the beginning. For this to work, I need a naturally aligned array.</em></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
+<div class="highlight"><pre><span></span><span class="cp">#define CS 17</span>
+<span class="cp">#define MOSI 19</span>
+<span class="cp">#define MISO 16</span>
+<span class="cp">#define SCK 18</span>
+<span class="cp">#define SPI_PORT spi0</span>
+
+<span class="cp">#define SIZE 256</span>
+
+<span class="cp">#define DAC_config_chan_A 0b0011000000000000</span>
+
+<span class="kt">int</span> <span class="n">sinTable</span><span class="p">[</span><span class="n">SIZE</span><span class="p">];</span>
+<span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">DACData</span><span class="p">[</span><span class="n">SIZE</span><span class="p">]</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">2048</span><span class="p">)));</span>
+
+<span class="k">const</span> <span class="kt">uint32_t</span> <span class="n">tranCount</span> <span class="o">=</span> <span class="n">SIZE</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
+<h3 id="Manipulating-the-DMA-timer-register">Manipulating the DMA timer register<a class="anchor-link" href="#Manipulating-the-DMA-timer-register">&#182;</a></h3><p>The SDK function <code>channel_config_set_dreq(dma_channel_config *c, uint dreq)</code> allows the programmer to select a transfer request signal for a particular DMA channel. The first argument is a pointer to channel configuration data, and the second is the <code>dreq</code> source. Sources for TREQ signals are internal (TIMERS) or external (DREQ, a Data Request from the system). 0x0 to 0x3a → select DREQ n as TREQ 0x3b → Select Timer 0 as TREQ 0x3c → Select Timer 1 as TREQ 0x3d → Select Timer 2 as TREQ (Optional) 0x3e → Select Timer 3 as TREQ (Optional) 0x3f → Permanent request, for unpaced transfers.</p>
+<p>At present, there is no SDK function for manipulating the TIMER0, TIMER1, TIMER2, or TIMER3 registers. However, these registers are mapped to the <code>dma_hw_t</code> struct. The struct which organizes the DMA control registers is shown below:</p>
+<div class="highlight"><pre><span></span><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+    <span class="n">dma_channel_hw_t</span> <span class="n">ch</span><span class="p">[</span><span class="n">NUM_DMA_CHANNELS</span><span class="p">];</span>
+    <span class="kt">uint32_t</span> <span class="n">_pad0</span><span class="p">[</span><span class="mi">16</span> <span class="o">*</span> <span class="p">(</span><span class="mi">16</span> <span class="o">-</span> <span class="n">NUM_DMA_CHANNELS</span><span class="p">)];</span>
+    <span class="n">io_ro_32</span> <span class="n">intr</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">inte0</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">intf0</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">ints0</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">_pad1</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+    <span class="n">io_rw_32</span> <span class="n">inte1</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">intf1</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">ints1</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">timer</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+    <span class="n">io_wo_32</span> <span class="n">multi_channel_trigger</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">sniff_ctrl</span><span class="p">;</span>
+    <span class="n">io_rw_32</span> <span class="n">sniff_data</span><span class="p">;</span>
+    <span class="kt">uint32_t</span> <span class="n">_pad2</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+    <span class="n">io_ro_32</span> <span class="n">fifo_levels</span><span class="p">;</span>
+    <span class="n">io_wo_32</span> <span class="n">abort</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">dma_hw_t</span><span class="p">;</span>
+</pre></div>
+<p>We can manipulate each of the TIMER registers by touching the <code>timer[4]</code> array in this struct. The function <code>dma_channel_set_timer0()</code> modifies TIMER0 in particular. So, I'll configure the transfer request signal for the DMA channel to be TIMER0 by setting the <code>dreq</code> source to 0x3b.</p>
+<p>Pacing (X / Y) Fractional Timer: The pacing timer produces TREQ assertions at a rate set by ((X / Y) * sys_clk). This equation is evaluated every sys_clk cycles and therefore can only generate TREQs at a rate of 1 per sys_clk (i.e. permanent TREQ) or less.</p>
+<p><em>Note: By default, the sys_clk for the RP2040 is 125 MHz.</em></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="kt">uint32_t</span> <span class="n">timerval</span><span class="p">){</span>
+    <span class="n">dma_hw</span><span class="o">-&gt;</span><span class="n">timer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">timerval</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="The-main-function">The main function<a class="anchor-link" href="#The-main-function">&#182;</a></h3><h4 id="Initializing-communication">Initializing communication<a class="anchor-link" href="#Initializing-communication">&#182;</a></h4><p>The first line in <code>main()</code> is a call to <code>stdio_init_all()</code>. This function initializes stdio to communicate through either UART or USB, depending on the configurations in the CMakeLists.txt file.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">stdio_init_all</span><span class="p">();</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Initializing-the-ADC">Initializing the ADC<a class="anchor-link" href="#Initializing-the-ADC">&#182;</a></h4><p>In order to use the ADC, I first initialised the ADC using the <code>adc_init()</code> function. I then initialized the GPIO 26 using the <code>adc_gpio_init()</code> function. From the datasheet, I know that the ADC inputs 0 to 3 are connected to GPIOs 26 to 29 respectively. In order to select the input, I used the <code>adc_select_input()</code> function.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">adc_init</span><span class="p">();</span>
+<span class="n">adc_gpio_init</span><span class="p">(</span><span class="mi">26</span><span class="p">);</span>
+<span class="n">adc_select_input</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Initializing-the-SPI">Initializing the SPI<a class="anchor-link" href="#Initializing-the-SPI">&#182;</a></h4><p>In order to initialise SPI instance, I used the <code>spi_init()</code> which takes in the SPI port and the baud rate as arguments. Then I used the <code>gpio_set_function()</code> to initialize the SPI pins with their respective functions. Lastly, I used the <code>spi_set_format()</code> function to configure how the SPI serialises and deserialises data on the wire.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">spi_init</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">,</span> <span class="mi">20000000</span><span class="p">);</span>
+<span class="n">gpio_set_function</span><span class="p">(</span><span class="n">MOSI</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span>
+<span class="n">gpio_set_function</span><span class="p">(</span><span class="n">MISO</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span>
+<span class="n">gpio_set_function</span><span class="p">(</span><span class="n">SCK</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span>
+<span class="n">gpio_set_function</span><span class="p">(</span><span class="n">CS</span><span class="p">,</span> <span class="n">GPIO_FUNC_SPI</span><span class="p">);</span>
+<span class="n">spi_set_format</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Initializing-the-sine-table">Initializing the sine table<a class="anchor-link" href="#Initializing-the-sine-table">&#182;</a></h4><p>Initialize a 256 element wide sine table in order to contain the amplitudes for a single period of a sine wave. Next, I used the sine table values and masked them to form a DAC data table which can be directly sent to the SPI transmit buffer.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+<span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="n">sinTable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)(</span><span class="mi">2047</span> <span class="o">*</span> <span class="n">sin</span><span class="p">((</span><span class="kt">float</span><span class="p">)</span> <span class="n">i</span> <span class="o">*</span> <span class="mf">6.283</span> <span class="o">/</span> <span class="p">(</span><span class="kt">float</span><span class="p">)</span> <span class="n">SIZE</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2047</span><span class="p">);</span>
+    <span class="n">DACData</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">DAC_config_chan_A</span> <span class="o">|</span> <span class="p">(</span><span class="n">sinTable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x0fff</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Obtaining-DMA-channels">Obtaining DMA channels<a class="anchor-link" href="#Obtaining-DMA-channels">&#182;</a></h4><p>I claimed two DMA channels by making calls to the <code>dma_claim_unused_channel()</code> function. By making the argument to this call true, the function will panic if no DMA channels are available. Each call will return the name of a channel (an int) which we store in <code>dataChannel</code> and <code>controlChannel</code>, respectively.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">int</span> <span class="n">dataChannel</span> <span class="o">=</span> <span class="n">dma_claim_unused_channel</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+<span class="kt">int</span> <span class="n">controlChannel</span> <span class="o">=</span> <span class="n">dma_claim_unused_channel</span><span class="p">(</span><span class="nb">true</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Configuring-the-control-DMA-channel">Configuring the control DMA channel<a class="anchor-link" href="#Configuring-the-control-DMA-channel">&#182;</a></h4><p>I declared an object of type <code>dma_channel_config</code> and name that object <code>c</code>. This object is a struct and, initially, the fields of that struct are populated with those provided by the call to <code>dma_channel_get_default_config(controlChannel)</code>. This function is as below:</p>
+<div class="highlight"><pre><span></span><span class="cm">/*! \brief  Get the default channel configuration for a given channel</span>
+<span class="cm"> *  \ingroup channel_config</span>
+<span class="cm"> *</span>
+<span class="cm"> * Setting | Default</span>
+<span class="cm"> * --------|--------</span>
+<span class="cm"> * Read Increment | true</span>
+<span class="cm"> * Write Increment | false</span>
+<span class="cm"> * DReq | DREQ_FORCE</span>
+<span class="cm"> * Chain to | self</span>
+<span class="cm"> * Data size | DMA_SIZE_32</span>
+<span class="cm"> * Ring | write=false, size=0 (i.e. off)</span>
+<span class="cm"> * Byte Swap | false</span>
+<span class="cm"> * Quiet IRQs | false</span>
+<span class="cm"> * Channel Enable | true</span>
+<span class="cm"> * Sniff Enable | false</span>
+<span class="cm"> *</span>
+<span class="cm"> * \param channel DMA channel</span>
+<span class="cm"> * \return the default configuration which can then be modified.</span>
+<span class="cm"> */</span>
+<span class="k">static</span> <span class="kr">inline</span> <span class="n">dma_channel_config</span> <span class="n">dma_channel_get_default_config</span><span class="p">(</span><span class="n">uint</span> <span class="n">channel</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">dma_channel_config</span> <span class="n">c</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+    <span class="n">channel_config_set_read_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+    <span class="n">channel_config_set_write_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="n">channel_config_set_dreq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="n">DREQ_FORCE</span><span class="p">);</span>
+    <span class="n">channel_config_set_chain_to</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="n">channel</span><span class="p">);</span>
+    <span class="n">channel_config_set_transfer_data_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="n">DMA_SIZE_32</span><span class="p">);</span>
+    <span class="n">channel_config_set_ring</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">channel_config_set_bswap</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="n">channel_config_set_irq_quiet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="n">channel_config_set_enable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+    <span class="n">channel_config_set_sniff_enable</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<p>In the remainder of this code chunk, I made calls to a series of SDK functions to change some of these default channel configurations. Not all of these are strictly necessary (since they configure the channel to default settings), but are included for clarity. In particular, I set the transfer data size to 32 bits and turn off read/write incrementing.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">dma_channel_config</span> <span class="n">c</span> <span class="o">=</span> <span class="n">dma_channel_get_default_config</span><span class="p">(</span><span class="n">controlChannel</span><span class="p">);</span>
+<span class="n">channel_config_set_transfer_data_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="n">DMA_SIZE_32</span><span class="p">);</span>
+<span class="n">channel_config_set_read_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+<span class="n">channel_config_set_write_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+<span class="n">dma_channel_configure</span><span class="p">(</span><span class="n">controlChannel</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dma_hw</span><span class="o">-&gt;</span><span class="n">ch</span><span class="p">[</span><span class="n">dataChannel</span><span class="p">].</span><span class="n">al1_transfer_count_trig</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tranCount</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Configuring-the-data-DMA-channel">Configuring the data DMA channel<a class="anchor-link" href="#Configuring-the-data-DMA-channel">&#182;</a></h4><p>Similarly to before, I declared an object of type <code>dma_channel_config</code> and name this one <code>c2</code>. I started with the default configurations, and then changed some of these configurations with subsequent calls to various <code>channel_config</code> functions from the SDK.</p>
+<ul>
+<li>I set the transfer data size to 16 bits, since that's what the DAC expects.</li>
+<li>I enabled read incrementing, and disabled write incrementing. This means that the DMA channel will increment from one read address to the next between subsequent transfers, but it will always write to the same write address.</li>
+<li>I called the function that I created to configure the DMA timer 0. In this case, I called it with the value 0x0017ffff. This will configure the timer to overflow at (0x0017 / 0xffff) * sys_clk Hz, or (23 / 65535) * sys_clk Hz. With a default sys_clk of 125MHz, this gives us (3.51e-4) * (125MHz) $\approx$ 43,870 Hz.</li>
+<li>I set the transfer request signal to Timer 0 by making the second argument of <code>channel_config_set_dreq</code> 0x3b.</li>
+<li>I chained the control channel to the data channel. By calling <code>channel_config_set_chain_to(&amp;c2, ctrl_chan);</code>, the control dma channel will start <em>automatically</em> when the data channel finishes.</li>
+<li>Finally, I called <code>channel_config_set_ring(&amp;c2, false, 9);</code>. The first argument is a pointer to the dma config structure <code>c2</code>. The second argument being <code>false</code> means that I am configuring read addresses (<code>true</code> here would instead configure a wrap boundary for write addresses). And finally, I specifed a 1 &lt;&lt; 9 byte boundary on the read pointer. This means that the read address wraps on a (512-byte) boundary, so that the data channel reads the same array from beginning to end when it is next triggered. Why 512 bytes? The sine table is 256 elements long, each element is a 16-bit short, which is 2 bytes.</li>
 </ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
+<p>Next, I started the control DMA channel. This will write to a triggered control register of the data channel, starting the first transfer of the the sine table out to the DAC. When the data channel completes, it triggers the control channel again (because I've chained the two). This starts the process over, and the two DMA channels ping-pong off of one another indefinitely.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">dma_channel_config</span> <span class="n">c2</span> <span class="o">=</span> <span class="n">dma_channel_get_default_config</span><span class="p">(</span><span class="n">dataChannel</span><span class="p">);</span>
+<span class="n">channel_config_set_transfer_data_size</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="n">DMA_SIZE_16</span><span class="p">);</span>
+<span class="n">channel_config_set_read_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+<span class="n">channel_config_set_write_increment</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+
+<span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="mh">0x0017ffff</span><span class="p">);</span>
+
+<span class="n">channel_config_set_dreq</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="mh">0x3b</span><span class="p">);</span>
+<span class="n">channel_config_set_chain_to</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="n">controlChannel</span><span class="p">);</span>
+<span class="n">channel_config_set_ring</span><span class="p">(</span><span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="nb">false</span><span class="p">,</span> <span class="mi">9</span><span class="p">);</span>
+
+<span class="n">dma_channel_configure</span><span class="p">(</span><span class="n">dataChannel</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">c2</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">spi_get_hw</span><span class="p">(</span><span class="n">SPI_PORT</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">dr</span><span class="p">,</span> <span class="n">DACData</span><span class="p">,</span> <span class="n">SIZE</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+<span class="n">dma_start_channel_mask</span><span class="p">(</span><span class="mi">1u</span> <span class="o">&lt;&lt;</span> <span class="n">controlChannel</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="The-infinite-while-loop">The infinite while loop<a class="anchor-link" href="#The-infinite-while-loop">&#182;</a></h4><p>For this code, the infinite while loop reads the ADC value and calculates the timer value for it. As we have established previously, the first 16 bits of the value represent <code>X</code> and the last 16 bits of the value represent <code>Y</code>. Therefore, I used the following algorithm to calculate the timer value:</p>
+<ul>
+<li>In case I want my adcIn to represent my frequency, I need to calculate the time such that $\frac{1}{timerValue} * 256 = t$ where $t = \frac{1}{f_{eff}}$. I need to multiply by 256 because that is the number of transfers that need to be made. </li>
+<li>This implies, $f_{eff} = \frac{X}{Y} * \frac{125000000}{256}$, where Y = 65535.</li>
+<li>This gives me $f_{eff} = X * 7.45064$.</li>
+<li>Hence, $X = \frac{adcIn}{7.45064}$ and $Y = 65535$.</li>
 </ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">int</span> <span class="n">adcIn</span> <span class="o">=</span> <span class="n">adc_read</span><span class="p">();</span>
+<span class="kt">int</span> <span class="n">timerVal</span> <span class="o">=</span> <span class="p">(((</span><span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="n">adcIn</span> <span class="o">/</span> <span class="mf">7.45064</span><span class="p">))</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">+</span> <span class="mi">65535</span><span class="p">;</span>
+<span class="n">dma_channel_set_timer0</span><span class="p">(</span><span class="n">timerVal</span><span class="p">);</span>
+</pre></div>
+<hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2><p>In order to view the output of the DAC, I used an oscilloscope. As it is quite evident from the oscilloscope output, the output of the DAC is a sine wave of the desired frequency.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/DMASPI.jpeg" style="width: 600px; height: 464px;" >
+</div></p>
+<figure>
+    <center><figcaption>Output of the SPI with DMA</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">SPIWithDMA</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">SPIWithDMA</span> <span class="s">SPIWithDMA.c</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">SPIWithDMA</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">SPIWithDMA</span> <span class="s">1</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">SPIWithDMA</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">SPIWithDMA</span> <span class="s">pico_stdlib</span> <span class="s">hardware_dma</span> <span class="s">hardware_spi</span> <span class="s">hardware_adc</span> <span class="s">pico_time</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
