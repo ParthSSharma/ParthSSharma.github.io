@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>GPIO Interrupt</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,107 +14259,189 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="GPIO-Interrupt">GPIO Interrupt<a class="anchor-link" href="#GPIO-Interrupt">&#182;</a></h1><p>This program was an introduction to attaching interrupts on a GPIO pin. An interrupt can be generated for every GPIO pin in four scenarios: the GPIO is logical 1, the GPIO is logical 0, there is a falling edge or there is a rising edge. The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * This code is a demonstration of the GPIO interrupt on the RaspberryPi</span>
+<span class="cm"> * Pico.</span>
+<span class="cm"> */</span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="c1"> //The hardware GPIO library</span><span class="cp"></span>
+
+<span class="cp">#define PIN 2 </span><span class="c1">//The GPIO pin for interrupt</span>
+
+<span class="k">volatile</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//The counter variable</span>
+
+<span class="kt">void</span> <span class="nf">gpio_callback</span><span class="p">(</span><span class="n">uint</span> <span class="n">gpio</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">events</span><span class="p">)</span> <span class="p">{</span> <span class="c1">//The GPIO callback function to handle interrupts</span>
+    <span class="n">counter</span><span class="o">++</span><span class="p">;</span> <span class="c1">//Increment the counter</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%llu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">counter</span><span class="p">);</span> <span class="c1">//Print the new value of the counter</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span> <span class="c1">//The program running on core 0</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span> <span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gpio_callback</span><span class="p">);</span> <span class="c1">//Enable interrupts for the GPIO pin. Note: Currently the GPIO parameter is ignored, and this callback will be called for any enabled GPIO IRQ on any pin</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//Empty eternity</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
-<hr>
+<h2 id="Stepping-through-the-code">Stepping through the code<a class="anchor-link" href="#Stepping-through-the-code">&#182;</a></h2><h3 id="Includes">Includes<a class="anchor-link" href="#Includes">&#182;</a></h3><p>The first lines of code in the C source file include some header files. One of these is standard C headers (<code>stdio.h</code>) and the others are headers which come from the C SDK for the Raspberry Pi Pico. The first of these, <code>pico/stdlib.h</code> is what the SDK calls a "High-Level API." These high-level API's "provide higher level functionality that isn’t hardware related or provides a richer set of functionality above the basic hardware interfaces." The architecture of this SDK is described at length in the SDK manual. All libraries within the SDK are INTERFACE libraries.</p>
+<p>The next include pulls in hardware APIs which are not already brought in by <code>pico/stdlib.h</code>. This is the <code>hardware/gpio.h</code> library which gives us access to the API associated with the hardware GPIO on the RP2040.</p>
+<p><strong>Don't forget to link these in the CMakeLists.txt file!</strong></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
+<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="cp"></span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-<li><a href="https://parthssharma.github.io/Pico/GPIOInterrupt.html">GPIO Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<h3 id="Global-declarations-and-defines">Global declarations and defines<a class="anchor-link" href="#Global-declarations-and-defines">&#182;</a></h3><p>The next section of the code is the <code>#define</code>'s and the global variables which will be used throughout the code. These are the  pin number (I attached a push button to this pin) and the counter variable to keep track of the number of times the button was pressed.</p>
+<p><em>Note: The counter variable needs to be <strong>volatile</strong> as it is being changed by an interrupt.</em></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cp">#define PIN 2</span>
+<span class="k">volatile</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="The-interrupt-handler">The interrupt handler<a class="anchor-link" href="#The-interrupt-handler">&#182;</a></h3><p>The <code>gpio_callback()</code> is the function that is called every time the pushbutton calls the interrupt. Since there can only be one interrupt callback associated with the GPIO pins, it takes in the GPIO pin and the event as arguments to take decisions based on them. My interrupt handler increments the counter variable and prints it out on the console.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">gpio_callback</span><span class="p">(</span><span class="n">uint</span> <span class="n">gpio</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">events</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">counter</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%llu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">counter</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h3 id="The-main-function">The main function<a class="anchor-link" href="#The-main-function">&#182;</a></h3><h4 id="Initializing-UART">Initializing UART<a class="anchor-link" href="#Initializing-UART">&#182;</a></h4><p>The first line in <code>main()</code> is a call to <code>stdio_init_all()</code>. This function initializes stdio to communicate through either UART or USB, depending on the configurations in the CMakeLists.txt file.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">stdio_init_all</span><span class="p">();</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Initializing-the-Interrupt">Initializing the Interrupt<a class="anchor-link" href="#Initializing-the-Interrupt">&#182;</a></h4><p>I used the <code>gpio_set_irq_enabled_with_callback()</code> function enable interrupts for the GPIO pin. Note: Currently the GPIO parameter is ignored, and this callback will be called for any enabled GPIO IRQ on any pin.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gpio_callback</span><span class="p">);</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="The-infinite-while-loop">The infinite while loop<a class="anchor-link" href="#The-infinite-while-loop">&#182;</a></h4><p>The infinite while loop for this program is an empty while loop which serves only to keep the core running and not let it exit.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span>
+<span class="p">}</span>
+</pre></div>
+<hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2><p>In order to view the output, I used PuTTY. As it shows, the counter variable increments as I press the button.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/GPIOInterruptOutput.png" style="width: 382px; height: 337px;" >
+</div></p>
+<figure>
+    <center><figcaption>The output of the button presses</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">HelloIRQ</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">HelloIRQ</span> <span class="s">HelloIRQ.c</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">HelloIRQ</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">HelloIRQ</span> <span class="s">0</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">HelloIRQ</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">HelloIRQ</span> <span class="s">pico_stdlib</span> <span class="s">hardware_gpio</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
