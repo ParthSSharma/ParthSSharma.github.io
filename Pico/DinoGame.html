@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Dino Game</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,112 +14259,388 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Dino-Game">Dino Game<a class="anchor-link" href="#Dino-Game">&#182;</a></h1><p>This program was my attempt to port my <a href="https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2021/pss242_sp2544/pss242_sp2544/index.html">Google Dino game</a> to the RaspberryPi Pico using Prof. Hunter Adam's <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA Library</a> for the RaspberryPi Pico. I created a dino game on the RaspberryPi Pico and implemented an additional function to draw bitmaps. The game is controlled using a pushbutton attached to a GPIO pin. The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * This code is an implementation of the Google dino game on the </span>
+<span class="cm"> * Raspberry Pi Pico.</span>
+<span class="cm"> */</span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //The standard math library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="c1"> //The hardware PIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/dma.h&quot;</span><span class="c1"> //The hardware DMA library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="c1"> //The pico time library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="c1"> //The hardware GPIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;Bitmaps.h&quot;</span><span class="c1"> //The bitmaps library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;vga_graphics.h&quot;</span><span class="c1"> //The graphics library</span><span class="cp"></span>
+
+<span class="cp">#define SCORE_X_OFFSET1 5 </span><span class="c1">//x offset for text</span>
+<span class="cp">#define SCORE_X_OFFSET2 150 </span><span class="c1">//x offset for variables</span>
+<span class="cp">#define SCORE_Y_OFFSET1 5 </span><span class="c1">//y offset for score</span>
+<span class="cp">#define SCORE_Y_OFFSET2 30 </span><span class="c1">//y offset for high score</span>
+
+<span class="cp">#define GROUND_SIZE 20 </span><span class="c1">//Number of elements in the ground array</span>
+<span class="cp">#define GROUND_HEIGHT 60 </span><span class="c1">//Height of the ground above the base</span>
+
+<span class="cp">#define HEIGHT 480 </span><span class="c1">//Height of the VGA screen</span>
+<span class="cp">#define WIDTH 640 </span><span class="c1">//Width of the VGA screen</span>
+
+<span class="cp">#define OBS_W_0 10 </span><span class="c1">//Width of obstacle type 0</span>
+<span class="cp">#define OBS_H_0 20 </span><span class="c1">//Height of obstacle type 0</span>
+<span class="cp">#define OBS_W_1 15 </span><span class="c1">//Width of obstacle type 1</span>
+<span class="cp">#define OBS_H_1 30 </span><span class="c1">//Height of obstacle type 1</span>
+<span class="cp">#define OBS_W_2 30 </span><span class="c1">//Width of obstacle type 2</span>
+<span class="cp">#define OBS_H_2 20 </span><span class="c1">//Height of obstacle type 2</span>
+
+<span class="cp">#define SPEED 5 </span><span class="c1">//Speed with which the ground moves</span>
+<span class="cp">#define GRAVITY 1.2 </span><span class="c1">//The gravity value</span>
+<span class="cp">#define JUM_VEL 15 </span><span class="c1">//Velocity with which the dino jumps</span>
+<span class="cp">#define RUNNER_FRAMES 10 </span><span class="c1">//Used for alternating between 2 dino running bitmaps</span>
+
+<span class="cp">#define JUMP_PIN 2 </span><span class="c1">//The pin to attach the pushbutton to</span>
+
+<span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">exTime</span><span class="p">,</span> <span class="n">obsType</span><span class="p">;</span> <span class="c1">//The extra time to maintain 30fps and the obstacle type</span>
+<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">highScore</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Score and high score</span>
+<span class="k">volatile</span> <span class="kt">char</span> <span class="n">resetGame</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Flag to indicate game reset</span>
+<span class="kt">char</span> <span class="n">runner</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//The variable to store which how many frames have elapsed since the running bitmap was changed</span>
+
+<span class="kt">char</span> <span class="n">scoreBuffer</span><span class="p">[</span><span class="mi">40</span><span class="p">],</span> <span class="n">highScoreBuffer</span><span class="p">[</span><span class="mi">40</span><span class="p">];</span> <span class="c1">//The buffer to display score and high score as strings</span>
+
+<span class="k">struct</span> <span class="nc">Player</span><span class="p">{</span> <span class="c1">//Player structure to store the x-coordinate, y-coordinate, width, height, velocity, jumped and alive status of the dino</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">alive</span><span class="p">;</span>
+    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">vy</span><span class="p">,</span> <span class="n">jumped</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">Ground</span><span class="p">{</span> <span class="c1">//Ground structure to store each small ground element with x-coordinate, y-coordinate and width</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="nc">Obstacle</span><span class="p">{</span> <span class="c1">//Obstacle structure to store the x-coordinate, y-coordinate and width of the obstacle</span>
+    <span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kr">inline</span> <span class="kt">int</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span> <span class="c1">//Function to generate a random number between min and max</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="n">max</span> <span class="o">-</span> <span class="n">min</span><span class="p">))</span> <span class="o">+</span> <span class="n">min</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="nc">Ground</span> <span class="n">ground</span><span class="p">[</span><span class="n">GROUND_SIZE</span><span class="p">];</span> <span class="c1">//Ground array</span>
+<span class="k">struct</span> <span class="nc">Obstacle</span> <span class="n">obstacle</span><span class="p">;</span> <span class="c1">//The obstacle object</span>
+<span class="k">struct</span> <span class="nc">Player</span> <span class="n">myPlayer</span><span class="p">;</span> <span class="c1">//The player object</span>
+
+<span class="kt">void</span> <span class="nf">DinoJump</span><span class="p">(</span><span class="n">uint</span> <span class="n">gpio</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">events</span><span class="p">)</span> <span class="p">{</span> <span class="c1">//The dino jump interrupt handler</span>
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&amp;</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span><span class="p">){</span> <span class="c1">//If the dino is alive and at ground level</span>
+        <span class="n">myPlayer</span><span class="p">.</span><span class="n">jumped</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Change the jumped status to 1</span>
+        <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="n">JUM_VEL</span><span class="p">;</span> <span class="c1">//Change the velocity</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span><span class="p">){</span> <span class="c1">//If the dino is dead</span>
+        <span class="n">resetGame</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Set the reset flag</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span> <span class="c1">//The program running on core 0</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span> <span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+    <span class="n">initVGA</span><span class="p">();</span> <span class="c1">//Initialize the VGA screen and functions</span>
+    <span class="n">srand</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">//Random seed</span>
+
+    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span> <span class="c1">//Counter variable</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">30</span><span class="p">;</span> <span class="c1">//Set the dino x-coordinate to be 30</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Set the dino y-coordinate to be 0</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="mi">22</span><span class="p">;</span> <span class="c1">//Set the dino width to be 22</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="mi">25</span><span class="p">;</span> <span class="c1">//Set the dino height to be 25</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Set the dino velocity to be 0</span>
+    <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Set the dino alive flag to be true</span>
+
+    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">);</span> <span class="c1">//Assign them a random x-coordinate</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span> <span class="c1">//Assign them a random y-coordinate</span>
+        <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">//Assign them a random width</span>
+    <span class="p">}</span>
+
+    <span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="c1">//Get a random obstacle type</span>
+    <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span> <span class="c1">//Set its x-coordinate to the right most edge</span>
+    <span class="k">switch</span><span class="p">(</span><span class="n">obsType</span><span class="p">){</span> <span class="c1">//Switch based on the obstacle type</span>
+        <span class="c1">//Obstacle type 0</span>
+        <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="c1">//Obstacle type 1</span>
+        <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="c1">//Obstacle type 2</span>
+        <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
+                <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">JUMP_PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">DinoJump</span><span class="p">);</span> <span class="c1">//Attach the callback to the specified GPIO</span>
+
+    <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">5000</span><span class="p">);</span> <span class="c1">//Sleep for 5 seconds to let the player sit down, have a drink and get ready</span>
+
+    <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set text colour to white</span>
+    <span class="n">setTextSize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="c1">//Set text size to 2</span>
+    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET1</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+    <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;Score: &quot;</span><span class="p">);</span> <span class="c1">//Print the text</span>
+
+    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET1</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+    <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;High Score: &quot;</span><span class="p">);</span> <span class="c1">//Print the text</span>
+
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span> <span class="c1">//Send the score into the buffer array</span>
+    <span class="n">sprintf</span><span class="p">(</span><span class="n">highScoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">highScore</span><span class="p">);</span> <span class="c1">//Send the highscore into the buffer array</span>
+    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+    <span class="n">writeString</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">);</span> <span class="c1">//Print the score</span>
+    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+    <span class="n">writeString</span><span class="p">(</span><span class="n">highScoreBuffer</span><span class="p">);</span> <span class="c1">//Print the highscore</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//While eternity</span>
+        <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">begin_time</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">);</span> <span class="c1">//Save the start time of the loop</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">resetGame</span><span class="p">){</span> <span class="c1">//If the reset flag is set</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the obstacle</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the player</span>
+
+            <span class="n">setTextColor</span><span class="p">(</span><span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Set the text colour to black</span>
+            <span class="n">setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1">//Set text size to 4</span>
+            <span class="n">setCursor</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">200</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+            <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;Till death do us `Parth&#39;&quot;</span><span class="p">);</span> <span class="c1">//Clear the text</span>
+
+            <span class="n">setTextSize</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span> <span class="c1">//Set text size to 2</span>
+            <span class="n">sprintf</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span> <span class="c1">//Send the score into the buffer array</span>
+            <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+            <span class="n">writeString</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">);</span> <span class="c1">//Clear the score</span>
+
+            <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset the player height</span>
+            <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset the player velocity</span>
+            <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Resurrect the player</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset the player score</span>
+
+            <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set the text colour to white</span>
+            <span class="n">sprintf</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span> <span class="c1">//Send the score into the buffer array</span>
+            <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+            <span class="n">writeString</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">);</span> <span class="c1">//Print the score</span>
+
+            <span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="c1">//Get a random obstacle type</span>
+            <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span> <span class="c1">//Set its x-coordinate to the right most edge</span>
+            <span class="k">switch</span><span class="p">(</span><span class="n">obsType</span><span class="p">){</span> <span class="c1">//Switch based on the obstacle type</span>
+                <span class="c1">//Obstacle type 0</span>
+                <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+                        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+                        <span class="k">break</span><span class="p">;</span>
+                <span class="c1">//Obstacle type 1</span>
+                <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+                        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+                        <span class="k">break</span><span class="p">;</span>
+                <span class="c1">//Obstacle type 2</span>
+                <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+                        <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
+                        <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="n">resetGame</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Clear the reset flag</span>
+        <span class="p">}</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span><span class="p">){</span> <span class="c1">//If the player is alive</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
+                <span class="n">drawHLine</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the older line</span>
+                <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span> <span class="c1">//Update the ground</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">+</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the ground element moves out of the frame</span>
+                    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span><span class="p">;</span> <span class="c1">//Reset the ground element&#39;s x-coordinate</span>
+                    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">+</span> <span class="mi">10</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">);</span> <span class="c1">//Get a new y-coordinate for the ground element</span>
+                    <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span> <span class="c1">//Get a new width for the ground element</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the player&#39;s older position</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the obstacle&#39;s older position</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">jumped</span><span class="p">){</span> <span class="c1">//If the player has jumped</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Change its y position</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">jumped</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset the jump flag</span>
+            <span class="p">}</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the y position is greater than 0</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span><span class="p">;</span> <span class="c1">//Change the y position based on the velocity</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">-=</span> <span class="n">GRAVITY</span><span class="p">;</span> <span class="c1">//Change the velocity based on the gravity</span>
+            <span class="p">}</span>
+            <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the y position is less than 0</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset y position</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">vy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Reset the velocity</span>
+            <span class="p">}</span>
+
+            <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">-=</span> <span class="n">SPEED</span><span class="p">;</span> <span class="c1">//Change the obstacle x position based on speed of the frame</span>
+
+            <span class="k">if</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the obstacle goes out of the screen</span>
+                <span class="n">obsType</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span> <span class="c1">//Get new obstacle type</span>
+                <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">WIDTH</span> <span class="o">+</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">);</span> <span class="c1">//Generate the new x-coordinate for the obstacle</span>
+                <span class="k">switch</span><span class="p">(</span><span class="n">obsType</span><span class="p">){</span> <span class="c1">//Switch based on the obstacle type</span>
+                    <span class="c1">//Obstacle type 0</span>
+                    <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_0</span><span class="p">;</span>
+                            <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_0</span><span class="p">;</span>
+                            <span class="k">break</span><span class="p">;</span>
+                    <span class="c1">//Obstacle type 1</span>
+                    <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_1</span><span class="p">;</span>
+                            <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_1</span><span class="p">;</span>
+                            <span class="k">break</span><span class="p">;</span>
+                    <span class="c1">//Obstacle type 2</span>
+                    <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">OBS_W_2</span><span class="p">;</span>
+                            <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">=</span> <span class="n">OBS_H_2</span><span class="p">;</span>
+                            <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span>
+
+                <span class="n">setTextColor</span><span class="p">(</span><span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Set the text colour to black</span>
+                <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                <span class="n">writeString</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">);</span> <span class="c1">//Clear the score</span>
+
+                <span class="n">score</span><span class="o">++</span><span class="p">;</span> <span class="c1">//Increment the score</span>
+
+                <span class="n">sprintf</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">score</span><span class="p">);</span> <span class="c1">//Send the score into the buffer array</span>
+                <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set the text colour to white</span>
+                <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET1</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                <span class="n">writeString</span><span class="p">(</span><span class="n">scoreBuffer</span><span class="p">);</span> <span class="c1">//Write the new score</span>
+
+                <span class="k">if</span><span class="p">(</span><span class="n">score</span> <span class="o">&gt;</span> <span class="n">highScore</span><span class="p">){</span>
+                    <span class="n">setTextColor</span><span class="p">(</span><span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Set the text colour to black</span>
+                    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                    <span class="n">writeString</span><span class="p">(</span><span class="n">highScoreBuffer</span><span class="p">);</span> <span class="c1">//Clear the highscore</span>
+
+                    <span class="n">highScore</span><span class="o">++</span><span class="p">;</span>
+
+                    <span class="n">sprintf</span><span class="p">(</span><span class="n">highScoreBuffer</span><span class="p">,</span> <span class="s">&quot;%u&quot;</span><span class="p">,</span> <span class="n">highScore</span><span class="p">);</span> <span class="c1">//Send the highscore into the buffer array</span>
+                    <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set the text colour to white</span>
+                    <span class="n">setCursor</span><span class="p">(</span><span class="n">SCORE_X_OFFSET2</span><span class="p">,</span> <span class="n">SCORE_Y_OFFSET2</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                    <span class="n">writeString</span><span class="p">(</span><span class="n">highScoreBuffer</span><span class="p">);</span> <span class="c1">//Write the new highscore</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">GROUND_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements ranging in the ground array</span>
+                <span class="n">drawHLine</span><span class="p">(</span><span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">x</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">y</span><span class="p">,</span> <span class="n">ground</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">w</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Draw the ground lines</span>
+            <span class="p">}</span>
+            <span class="k">switch</span><span class="p">(</span><span class="n">obsType</span><span class="p">){</span> <span class="c1">//Switch based on the obstacle type, draw the corrosponding bitmap</span>
+                <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">drawBitmap</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obsTypeZer</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+                        <span class="k">break</span><span class="p">;</span>
+                <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">drawBitmap</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obsTypeOne</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+                        <span class="k">break</span><span class="p">;</span>
+                <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">drawBitmap</span><span class="p">(</span><span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">((</span><span class="n">obstacle</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">obsTypeTwo</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+                        <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the player is jumping</span>
+                <span class="n">drawBitmap</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">dinoJumpUp</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Draw the jump bitmap</span>
+            <span class="p">}</span>
+            <span class="k">else</span><span class="p">{</span> <span class="c1">//If the player is not jumping, alternate bitmaps depending on the frames</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">runner</span> <span class="o">&gt;</span> <span class="n">RUNNER_FRAMES</span> <span class="o">/</span> <span class="mi">2</span><span class="p">){</span>
+                    <span class="n">drawBitmap</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">dinoRunOne</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+                <span class="p">}</span>
+                <span class="k">else</span><span class="p">{</span>
+                    <span class="n">drawBitmap</span><span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span> <span class="o">-</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))),</span> <span class="n">dinoRunTwo</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">h</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+            <span class="n">runner</span> <span class="o">=</span> <span class="p">(</span><span class="n">runner</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">RUNNER_FRAMES</span><span class="p">;</span> <span class="c1">//Increment the runner and modulo based on the upper limit of the frames</span>
+            <span class="n">drawHLine</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">-</span> <span class="n">GROUND_HEIGHT</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Draw the ground line</span>
+
+            <span class="k">if</span><span class="p">((</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">myPlayer</span><span class="p">.</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">w</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">myPlayer</span><span class="p">.</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">obstacle</span><span class="p">.</span><span class="n">h</span><span class="p">)){</span> <span class="c1">//If the player has hit the obstacle</span>
+                <span class="n">myPlayer</span><span class="p">.</span><span class="n">alive</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Kill the player</span>
+                <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set text colour to white</span>
+                <span class="n">setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1">//Set the text size as 4</span>
+                <span class="n">setCursor</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">200</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;Till death do us `Parth&#39;&quot;</span><span class="p">);</span> <span class="c1">//Print the message</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">exTime</span> <span class="o">=</span> <span class="mi">33</span> <span class="o">-</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">begin_time</span><span class="p">);</span> <span class="c1">//Calculate the amount of time to sleep for to achieve 30fps</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%u</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">exTime</span><span class="p">);</span> <span class="c1">//Print the time out</span>
+        <span class="n">sleep_ms</span><span class="p">(</span><span class="n">exTime</span><span class="p">);</span> <span class="c1">//Sleep for that time</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
-<hr>
+<h2 id="Code-Organization">Code Organization<a class="anchor-link" href="#Code-Organization">&#182;</a></h2><p>The code has a <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA library</a> which has been explained really nicely by Prof. Adams, the <a href="https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2021/pss242_sp2544/pss242_sp2544/BitMap.h">Bitmap header file</a> and the main file. I have explained the working of the Dino game <a href="https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2021/pss242_sp2544/pss242_sp2544/index.html">here</a>. The bitmap function I used for the PIC32 version has been described <a href="https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2021/pss242_sp2544/pss242_sp2544/index.html#Optimization-of-the-predefined-bitmap-function">here</a>. I modified it slightly to use VGA library provided. Lastly, I used <a href="https://lcd-image-converter.riuson.com/en/about/">this software</a> to create the bitmaps.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">drawBitmap</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">bitmap</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">color</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">bgColor</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">x</span> <span class="o">&gt;=</span> <span class="n">_width</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="n">y</span> <span class="o">&gt;=</span> <span class="n">_height</span><span class="p">))</span> <span class="k">return</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_width</span><span class="p">)</span>  <span class="n">w</span> <span class="o">=</span> <span class="n">_width</span>  <span class="o">-</span> <span class="n">x</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">y</span> <span class="o">+</span> <span class="n">h</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">_height</span><span class="p">)</span> <span class="n">h</span> <span class="o">=</span> <span class="n">_height</span> <span class="o">-</span> <span class="n">y</span><span class="p">;</span>
+
+    <span class="kt">short</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">byteWidth</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">h</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">w</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">pgm_read_byte</span><span class="p">(</span><span class="n">bitmap</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">byteWidth</span> <span class="o">+</span> <span class="n">i</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mi">128</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mi">7</span><span class="p">)))</span> <span class="p">{</span>
+                <span class="n">drawPixel</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="k">else</span><span class="p">{</span>
+                <span class="n">drawPixel</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">x</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="n">y</span><span class="p">,</span> <span class="n">bgColor</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-<li><a href="https://parthssharma.github.io/Pico/GPIOInterrupt.html">GPIO Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>Games</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DinoGame.html">Dino Game</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/iZcDjmx183Y" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+    </iframe>
+</div></p>
+<figure>
+    <center><figcaption>Dino game on RaspberryPi Pico</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">Dino-Game-project</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">DinoGame</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">DinoGame</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">DinoGame</span> <span class="s">1</span><span class="p">)</span>
+
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">DinoGame</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/hsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">DinoGame</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/vsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">DinoGame</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/rgb.pio</span><span class="p">)</span>
+
+<span class="nb">target_sources</span><span class="p">(</span><span class="s">DinoGame</span> <span class="s">PRIVATE</span> <span class="s">DinoGame.c</span> <span class="s">vga_graphics.c</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">DinoGame</span> <span class="s">PRIVATE</span> <span class="s">pico_stdlib</span> <span class="s">hardware_pio</span> <span class="s">hardware_dma</span> <span class="s">hardware_adc</span> <span class="s">hardware_irq</span> <span class="s">pico_time</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">DinoGame</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
