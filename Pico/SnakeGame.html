@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Snake Game</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,126 +14259,453 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Snake-Game">Snake Game<a class="anchor-link" href="#Snake-Game">&#182;</a></h1><p>This program was my attempt recreate the <a href="https://en.wikipedia.org/wiki/Snake_(video_game_genre">Snake game</a>) on the RaspberryPi Pico using Prof. Hunter Adam's <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA Library</a> for the RaspberryPi Pico. The game is controlled using pushbuttons attached to 4 different GPIO pins(on for each direction the snake can move in). The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * This code is an implementation of the famous snake game.</span>
+<span class="cm"> * It uses 4 GPIO pins to control the snake which has to eat the food</span>
+<span class="cm"> * in order to grow in length.</span>
+<span class="cm"> */</span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //The standard math library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="c1"> //The hardware PIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/dma.h&quot;</span><span class="c1"> //The hardware DMA library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="c1"> //The pico time library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="c1"> //The hardware GPIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;vga_graphics.h&quot;</span><span class="c1"> //The graphics library</span><span class="cp"></span>
+
+<span class="cp">#define HEIGHT 480 </span><span class="c1">//Height of the VGA screen</span>
+<span class="cp">#define WIDTH 640 </span><span class="c1">//Width of the VGA screen</span>
+
+<span class="cp">#define BOARD_HEIGHT (HEIGHT / 4) </span><span class="c1">//The height if the board</span>
+<span class="cp">#define BOARD_WIDTH (WIDTH / 4) </span><span class="c1">//The width of the board</span>
+
+<span class="c1">//The directions</span>
+<span class="cp">#define UP 0 </span><span class="c1">//The UP state</span>
+<span class="cp">#define DOWN 1 </span><span class="c1">//The DOWN state</span>
+<span class="cp">#define LEFT 2 </span><span class="c1">//The LEFT state</span>
+<span class="cp">#define RIGHT 3 </span><span class="c1">//The RIGHT state</span>
+
+<span class="c1">//The GPIO pins</span>
+<span class="cp">#define UP_PIN 3 </span><span class="c1">//The UP GPIO pin</span>
+<span class="cp">#define DOWN_PIN 2 </span><span class="c1">//The DOWN GPIO pin</span>
+<span class="cp">#define LEFT_PIN 5 </span><span class="c1">//The LEFT GPIO pin</span>
+<span class="cp">#define RIGHT_PIN 4 </span><span class="c1">//The RIGHT GPIO pin</span>
+
+<span class="c1">//Structure to hold the node (each point) of the snake.</span>
+<span class="c1">//The snake is constructed using a linked list type data structure.</span>
+<span class="k">typedef</span> <span class="k">struct</span> <span class="nc">Node</span><span class="p">{</span> <span class="c1">//Node structure</span>
+    <span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span> <span class="c1">//The x coordinate and the y coordinate of the node</span>
+    <span class="k">struct</span> <span class="nc">Node</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span> <span class="c1">//The next node of the snake</span>
+<span class="p">}</span><span class="n">Node</span><span class="p">;</span>
+
+<span class="n">Node</span> <span class="o">*</span><span class="n">head</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="c1">//The head of the snake</span>
+
+<span class="kt">short</span> <span class="n">food</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span> <span class="c1">//The array to hold x-coordinate and the y-coordinate of the food</span>
+<span class="k">volatile</span> <span class="kt">char</span> <span class="n">direction</span> <span class="o">=</span> <span class="n">RIGHT</span><span class="p">;</span> <span class="c1">//The current direction of the snake</span>
+<span class="kt">char</span> <span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//The flag that determines if the snake is alive</span>
+<span class="k">volatile</span> <span class="kt">char</span> <span class="n">reset</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//The reset flag</span>
+
+<span class="kr">inline</span> <span class="kt">int</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span> <span class="c1">//Function to generate a random number between min and max</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="n">max</span> <span class="o">-</span> <span class="n">min</span><span class="p">))</span> <span class="o">+</span> <span class="n">min</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">swap</span><span class="p">(</span><span class="kt">short</span> <span class="o">*</span><span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="o">*</span><span class="n">y</span><span class="p">){</span> <span class="c1">//Function to swap two shorts</span>
+    <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">x</span> <span class="o">!=</span> <span class="o">*</span><span class="n">y</span><span class="p">){</span>
+        <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="o">*</span><span class="n">x</span> <span class="o">^</span> <span class="o">*</span><span class="n">y</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">y</span> <span class="o">=</span> <span class="o">*</span><span class="n">x</span> <span class="o">^</span> <span class="o">*</span><span class="n">y</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">x</span> <span class="o">=</span> <span class="o">*</span><span class="n">x</span> <span class="o">^</span> <span class="o">*</span><span class="n">y</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">genFood</span><span class="p">(){</span> <span class="c1">//The function to generate the food</span>
+<span class="nl">genAgain</span><span class="p">:</span>
+    <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BOARD_WIDTH</span><span class="p">);</span> <span class="c1">//Get a random x coordinate</span>
+    <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BOARD_HEIGHT</span><span class="p">);</span> <span class="c1">//Get a random y coordinate</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span> <span class="c1">//Create a new current node</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span> <span class="c1">//Make the current node point to the next node</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//Iterate to the end of the list</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&amp;&amp;</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">){</span> <span class="c1">//If at any point the food lies on the body of the snake</span>
+            <span class="k">goto</span> <span class="n">genAgain</span><span class="p">;</span> <span class="c1">//Generate new coordinates for the food</span>
+        <span class="p">}</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span> <span class="c1">//Else point to the next node</span>
+    <span class="p">}</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">YELLOW</span><span class="p">);</span> <span class="c1">//Draw a yellow rectangle for food</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">addNode</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">){</span> <span class="c1">//Function to add a new node for the snake</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">head</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//If the linked list is empty</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="p">(</span><span class="n">Node</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Node</span><span class="p">));</span> <span class="c1">//Allocate memory for the head</span>
+        <span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span> <span class="c1">//Set x-coordinate for the head</span>
+        <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span> <span class="c1">//Set y-coordinate for the head</span>
+        <span class="n">head</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="c1">//Make the next of head as NULL</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span> <span class="c1">//Draw a red rectangle for head</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+        <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span> <span class="c1">//Create a new pointer pointing to the head</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//Iterate to the last element of the list</span>
+            <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="p">(</span><span class="n">Node</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Node</span><span class="p">));</span> <span class="c1">//Allocate new memory for the next node</span>
+        <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span> <span class="c1">//Set x-coordinate for the new node</span>
+        <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span> <span class="c1">//Set y-coordinate for the new node</span>
+        <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="c1">//Set the next node as NULL</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span> <span class="c1">//Draw a green rectangle for the list</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">move</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">){</span> <span class="c1">//Function to move the snake such that the new coordinates of the head are x, y</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span> <span class="c1">//Draw the new head</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span> <span class="c1">//Create a new pointer pointing to the head</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//For all the elements of the snake&#39;s body</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span> <span class="c1">//Draw the new snake body</span>
+        <span class="c1">//Swap the coordinates and the current node coordinates</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span> <span class="c1">//Go over to the next node</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//If the current node is not null</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&amp;&amp;</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">){</span> <span class="c1">//If the snake eats itself</span>
+                <span class="n">alive</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Kill it</span>
+                <span class="n">fillRect</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span> <span class="c1">//Draw the head one last time</span>
+                <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Set text colour to white</span>
+                <span class="n">setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span> <span class="c1">//Set the text size as 4</span>
+                <span class="n">setCursor</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">);</span> <span class="c1">//Set the cursor</span>
+                <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;Death awaits us all&quot;</span><span class="p">);</span> <span class="c1">//Print the message</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the oldest element</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">eatAndMove</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">){</span> <span class="c1">//Function to eat the food and still move by increasing the length of the snake</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span> <span class="c1">//Draw the new head</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span> <span class="c1">//Create a new pointer pointing to the head</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//For all the elements until the second last element of the snake&#39;s body</span>
+        <span class="c1">//Store the old values of x and y coordinates in the temporary placeholders</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span> <span class="c1">//Draw the new snake body</span>
+        <span class="c1">//Swap the coordinates and the current node coordinates</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span> <span class="c1">//Go over to the next node</span>
+    <span class="p">}</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="p">(</span><span class="n">Node</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Node</span><span class="p">));</span> <span class="c1">//Allocate new memory for the next node</span>
+    <span class="c1">//Update the new coordinates of the body</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span> <span class="c1">//Draw the new snake body</span>
+    <span class="c1">//Swap the coordinates and the current node coordinates</span>
+    <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+    <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>  <span class="c1">//Go over to the next node</span>
+    <span class="c1">//Update the last element of the body</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="c1">//Make the last element point to NULL</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">moveUp</span><span class="p">(){</span> <span class="c1">//The function to move UP</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]){</span> <span class="c1">//If the head is on the food</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the head is on the top edge of the screen</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">BOARD_HEIGHT</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Eat the food and move to the bottom edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Eat the food and move UP</span>
+        <span class="p">}</span>
+        <span class="n">genFood</span><span class="p">();</span> <span class="c1">//Generate new food</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the head is on the top edge of the screen</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">BOARD_HEIGHT</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Move to the bottom edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Move UP</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">moveDown</span><span class="p">(){</span> <span class="c1">//The function to move DOWN</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]){</span> <span class="c1">//If the head is on the food</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">BOARD_HEIGHT</span> <span class="o">-</span> <span class="mi">1</span><span class="p">){</span> <span class="c1">//If the head is on the bottom edge of the screen</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">//Eat the food and move to the top edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Eat the food and move DOWN</span>
+        <span class="p">}</span>
+        <span class="n">genFood</span><span class="p">();</span> <span class="c1">//Generate new food</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">BOARD_HEIGHT</span> <span class="o">-</span> <span class="mi">1</span><span class="p">){</span> <span class="c1">//If the head is on the bottom edge of the screen</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">//Move to the top edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span> <span class="c1">//Move DOWN</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">moveLeft</span><span class="p">(){</span> <span class="c1">//The function to move LEFT</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]){</span> <span class="c1">//If the head is on the food</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the head is on the left edge of the screen</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">BOARD_WIDTH</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Eat the food and move to the right edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Eat the food and move LEFT</span>
+        <span class="p">}</span>
+        <span class="n">genFood</span><span class="p">();</span> <span class="c1">//Generate new food</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="mi">0</span><span class="p">){</span> <span class="c1">//If the head is on the left edge of the screen</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">BOARD_WIDTH</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Move to the right edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Move LEFT</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">moveRight</span><span class="p">(){</span> <span class="c1">//The function to move RIGHT</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]){</span> <span class="c1">//If the head is on the food</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">BOARD_WIDTH</span> <span class="o">-</span> <span class="mi">1</span><span class="p">){</span> <span class="c1">//If the head is on the right edge of the screen</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Eat the food and move to the left edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">eatAndMove</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Eat the food and move RIGHT</span>
+        <span class="p">}</span>
+        <span class="n">genFood</span><span class="p">();</span> <span class="c1">//Generate new food</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">BOARD_WIDTH</span> <span class="o">-</span> <span class="mi">1</span><span class="p">){</span> <span class="c1">//If the head is on the right edge of the screen</span>
+            <span class="n">move</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Move to the left edge of the screen</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+            <span class="n">move</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">);</span> <span class="c1">//Move RIGHT</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">changeDir</span><span class="p">(</span><span class="n">uint</span> <span class="n">gpio</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">events</span><span class="p">)</span> <span class="p">{</span> <span class="c1">//The change direction interrupt handler</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">alive</span><span class="p">){</span> <span class="c1">//If the snake is alive</span>
+        <span class="k">switch</span><span class="p">(</span><span class="n">gpio</span><span class="p">){</span> <span class="c1">//Switch based on the GPIO</span>
+            <span class="k">case</span> <span class="nl">UP_PIN</span><span class="p">:</span> <span class="n">direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">DOWN</span> <span class="o">?</span> <span class="nl">DOWN</span> <span class="p">:</span> <span class="n">UP</span><span class="p">);</span> <span class="c1">//If the command is to go UP and the snake isn&#39;t going DOWN, go UP</span>
+                         <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="nl">DOWN_PIN</span><span class="p">:</span> <span class="n">direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">UP</span> <span class="o">?</span> <span class="nl">UP</span> <span class="p">:</span> <span class="n">DOWN</span><span class="p">);</span> <span class="c1">//If the command is to go DOWN and the snake isn&#39;t going UP, go DOWN</span>
+                           <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="nl">LEFT_PIN</span><span class="p">:</span> <span class="n">direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">RIGHT</span> <span class="o">?</span> <span class="nl">RIGHT</span> <span class="p">:</span> <span class="n">LEFT</span><span class="p">);</span> <span class="c1">//If the command is to go LEFT and the snake isn&#39;t going RIGHT, go LEFT</span>
+                           <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="nl">RIGHT_PIN</span><span class="p">:</span> <span class="n">direction</span> <span class="o">=</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">LEFT</span> <span class="o">?</span> <span class="nl">LEFT</span> <span class="p">:</span> <span class="n">RIGHT</span><span class="p">);</span> <span class="c1">//If the command is to go RIGHT and the snake isn&#39;t going LEFT, go RIGHT</span>
+                            <span class="k">break</span><span class="p">;</span>
+            <span class="k">default</span><span class="o">:</span> <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span><span class="p">{</span> <span class="c1">//If the snake is dead</span>
+        <span class="n">reset</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Set the reset flag</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">(){</span>
+    <span class="kt">short</span> <span class="n">i</span><span class="p">;</span> <span class="c1">//An interator</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span><span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+    <span class="n">initVGA</span><span class="p">();</span> <span class="c1">//Initialize the VGA screen and functions</span>
+
+    <span class="n">srand</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">//Random seed</span>
+
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">UP_PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">changeDir</span><span class="p">);</span> <span class="c1">//Attach the callback to the specified GPIO</span>
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">DOWN_PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">changeDir</span><span class="p">);</span> <span class="c1">//Attach the callback to the specified GPIO</span>
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">LEFT_PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">changeDir</span><span class="p">);</span> <span class="c1">//Attach the callback to the specified GPIO</span>
+    <span class="n">gpio_set_irq_enabled_with_callback</span><span class="p">(</span><span class="n">RIGHT_PIN</span><span class="p">,</span> <span class="n">GPIO_IRQ_EDGE_FALL</span><span class="p">,</span> <span class="nb">true</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">changeDir</span><span class="p">);</span> <span class="c1">//Attach the callback to the specified GPIO</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//While eternity</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">reset</span><span class="p">){</span> <span class="c1">//If the reset flag has been set</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">WIDTH</span><span class="p">,</span> <span class="n">HEIGHT</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Clear the screen</span>
+            <span class="n">alive</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Resurrect the snake</span>
+
+            <span class="c1">//Clear the linked list</span>
+            <span class="n">Node</span> <span class="o">*</span><span class="n">tmp</span><span class="p">;</span> <span class="c1">//Create a temporary node</span>
+            <span class="k">while</span><span class="p">(</span><span class="n">head</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span> <span class="c1">//While head exists</span>
+                <span class="n">tmp</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span> <span class="c1">//Make the temp as head</span>
+                <span class="n">head</span> <span class="o">=</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span> <span class="c1">//Head is the next of itself</span>
+                <span class="n">free</span><span class="p">(</span><span class="n">tmp</span><span class="p">);</span> <span class="c1">//Free the temp</span>
+            <span class="p">}</span>
+            <span class="c1">//Create the snake</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+                <span class="n">addNode</span><span class="p">((</span><span class="n">BOARD_WIDTH</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">BOARD_HEIGHT</span> <span class="o">/</span> <span class="mi">2</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">RIGHT</span><span class="p">;</span> <span class="c1">//Set default direction to be RIGHT</span>
+            <span class="n">genFood</span><span class="p">();</span> <span class="c1">//Generate food</span>
+            <span class="n">reset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Clear the reset flag</span>
+        <span class="p">}</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">alive</span><span class="p">){</span> <span class="c1">//While the snake is alive</span>
+            <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">begin_time</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">);</span> <span class="c1">//Save the start time of the loop</span>
+            <span class="k">switch</span><span class="p">(</span><span class="n">direction</span><span class="p">){</span> <span class="c1">//Switch based on the direction the snake is moving in</span>
+                <span class="k">case</span> <span class="nl">UP</span><span class="p">:</span> <span class="n">moveUp</span><span class="p">();</span> <span class="c1">//If the direction is UP, move UP</span>
+                            <span class="k">break</span><span class="p">;</span>
+                <span class="k">case</span> <span class="nl">DOWN</span><span class="p">:</span> <span class="n">moveDown</span><span class="p">();</span> <span class="c1">//If the direction is DOWN, move DOWN</span>
+                            <span class="k">break</span><span class="p">;</span>
+                <span class="k">case</span> <span class="nl">LEFT</span><span class="p">:</span> <span class="n">moveLeft</span><span class="p">();</span> <span class="c1">//If the direction is LEFT, move LEFT</span>
+                            <span class="k">break</span><span class="p">;</span>
+                <span class="k">case</span> <span class="nl">RIGHT</span><span class="p">:</span> <span class="n">moveRight</span><span class="p">();</span> <span class="c1">//If the direction is RIGHT, move RIGHT</span>
+                            <span class="k">break</span><span class="p">;</span>
+                <span class="k">default</span><span class="o">:</span> <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">33</span> <span class="o">-</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">begin_time</span><span class="p">));</span> <span class="c1">//Sleep for the amount of time to achieve 30fps</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
-<hr>
+<h2 id="Code-Organization">Code Organization<a class="anchor-link" href="#Code-Organization">&#182;</a></h2><p>The code has a <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA library</a> which has been explained really nicely by Prof. Adams and the main file. Most of the code is self explanatory, however, the main components of the game are explained in the following subsections.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
+<h4 id="The-body-of-the-snake">The body of the snake<a class="anchor-link" href="#The-body-of-the-snake">&#182;</a></h4><p>First and foremost, the snake is implemented in the form of a linked list. According to <a href="https://en.wikipedia.org/wiki/Linked_list">Wikipedia</a>, a linked list is a linear collection of data elements whose order is not given by their physical placement in memory. Instead, each element points to the next. It is a data structure consisting of a collection of nodes which together represent a sequence. In its most basic form, each node contains: data, and a reference (in other words, a link) to the next node in the sequence. Each node in our snake linked list holds the x-coordinate of the node, the y-coordinate of the node and the pointer to the next node. Therefore, moving the snake is nothing more than shifting the data of the nodes of the linked list.</p>
+<div class="highlight"><pre><span></span><span class="k">typedef</span> <span class="k">struct</span> <span class="nc">Node</span><span class="p">{</span>
+    <span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="nc">Node</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<span class="p">}</span><span class="n">Node</span><span class="p">;</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-<li><a href="https://parthssharma.github.io/Pico/GPIOInterrupt.html">GPIO Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>Games</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DinoGame.html">Dino Game</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SnakeGame.html">Snake Game</a></li>
-</ul>
-</blockquote>
-<p>Equations</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/SinCosTan.html">Sin Cos Tan</a></li>
-<li><a href="https://parthssharma.github.io/Pico/HeartEquation.html">Heart Equation</a></li>
-</ul>
-</blockquote>
-<p>Fractals</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/CircleFractal.html">Circle Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LineFractal.html">Line Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/TreeFractal.html">Tree Fractal</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<h4 id="The-generation-of-food">The generation of food<a class="anchor-link" href="#The-generation-of-food">&#182;</a></h4><p>The function to generate food is pretty simple. First, I randomly generate x and y coordinates for the food. Then, I iterate through the linked list. If the food coordinates coincide with the snake's body, I regenerate the food coordinates.</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">genFood</span><span class="p">(){</span>
+<span class="nl">genAgain</span><span class="p">:</span>
+    <span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BOARD_WIDTH</span><span class="p">);</span>
+    <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BOARD_HEIGHT</span><span class="p">);</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&amp;&amp;</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">){</span>
+            <span class="k">goto</span> <span class="n">genAgain</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">food</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">food</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">YELLOW</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Moving-the-snake">Moving the snake<a class="anchor-link" href="#Moving-the-snake">&#182;</a></h4><p>Two functions which are responsible for motion are <code>move()</code> and <code>eatAndMove()</code>. These functions are respinsible for the normal motion and the motion of the snake respectively. They're quite similar, except for the fact that <code>eatAndMove()</code> increases the length of the snake by adding a new element at the end of the linked list. Both these functions work by shifting the data in the linked list.</p>
+<div class="highlight"><pre><span></span><span class="kt">void</span> <span class="nf">move</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">){</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">current</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">==</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&amp;&amp;</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">==</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">){</span>
+                <span class="n">alive</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+                <span class="n">fillRect</span><span class="p">(</span><span class="n">head</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">head</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span>
+                <span class="n">setTextColor</span><span class="p">(</span><span class="n">WHITE</span><span class="p">);</span>
+                <span class="n">setTextSize</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+                <span class="n">setCursor</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">);</span>
+                <span class="n">writeString</span><span class="p">(</span><span class="s">&quot;Death awaits us all&quot;</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">eatAndMove</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">){</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">RED</span><span class="p">);</span>
+    <span class="n">Node</span> <span class="o">*</span><span class="n">current</span> <span class="o">=</span> <span class="n">head</span><span class="p">;</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">){</span>
+        <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+        <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+        <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="p">(</span><span class="n">Node</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Node</span><span class="p">));</span>
+    <span class="n">fillRect</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">GREEN</span><span class="p">);</span>
+    <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">x</span><span class="p">);</span>
+    <span class="n">swap</span><span class="p">(</span><span class="o">&amp;</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">y</span><span class="p">);</span>
+    <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">;</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">;</span>
+    <span class="n">current</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+<hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/C4RQg4S9kYw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+    </iframe>
+</div></p>
+<figure>
+    <center><figcaption>Snake game on RaspberryPi Pico</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">Snake-project</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">Snake</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">Snake</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">Snake</span> <span class="s">1</span><span class="p">)</span>
+
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">Snake</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/hsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">Snake</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/vsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">Snake</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/rgb.pio</span><span class="p">)</span>
+
+<span class="nb">target_sources</span><span class="p">(</span><span class="s">Snake</span> <span class="s">PRIVATE</span> <span class="s">Snake.c</span> <span class="s">vga_graphics.c</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">Snake</span> <span class="s">PRIVATE</span> <span class="s">pico_stdlib</span> <span class="s">hardware_pio</span> <span class="s">hardware_dma</span> <span class="s">hardware_adc</span> <span class="s">hardware_irq</span> <span class="s">pico_time</span> <span class="s">pico_multicore</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">Snake</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
