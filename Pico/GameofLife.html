@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Game of Life</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,131 +14259,271 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="Game-of-Life">Game of Life<a class="anchor-link" href="#Game-of-Life">&#182;</a></h1><p>This program was my attempt recreate the <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway's Game of Life</a> on the RaspberryPi Pico using Prof. Hunter Adam's <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA Library</a> for the RaspberryPi Pico. The program starts with randomly placing alive and dead cells on a board and calculating the next generation of the based on the current generation. For this purpose, I used two boards, one to hold the current generation and the other to hold the next generation. Once the new generation is completely worked out, it is overwritten into the old board. The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="cm">/*</span>
+<span class="cm"> * Parth Sarthi Sharma (pss242@cornell.edu)</span>
+<span class="cm"> * Code based on examples from Raspberry Pi Foundation.</span>
+<span class="cm"> * This code is an implementation of the Conway&#39;s Game of Life </span>
+<span class="cm"> * on the Raspberry Pi Pico.</span>
+<span class="cm"> */</span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //The standard math library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="c1"> //The hardware PIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/dma.h&quot;</span><span class="c1"> //The hardware DMA library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="c1"> //The pico time library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="c1"> //The hardware GPIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;Bitmaps.h&quot;</span><span class="c1"> //The bitmaps library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;vga_graphics.h&quot;</span><span class="c1"> //The graphics library</span><span class="cp"></span>
+
+<span class="cp">#define HEIGHT 480 </span><span class="c1">//Height of the VGA screen</span>
+<span class="cp">#define WIDTH 640 </span><span class="c1">//Width of the VGA screen</span>
+
+
+<span class="k">volatile</span> <span class="kt">char</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">][</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">],</span> <span class="n">flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//The game board and the flag to synchronise changes made for the next generation and drawing the next generation</span>
+<span class="kt">char</span> <span class="n">NewBoard</span><span class="p">[</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">][</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">];</span> <span class="c1">//A copy of the game board to make changes to</span>
+<span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">generation</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//The generation</span>
+
+<span class="kt">int</span> <span class="nf">checkNeighbours</span><span class="p">(</span><span class="kt">int</span> <span class="n">x</span><span class="p">,</span> <span class="kt">int</span> <span class="n">y</span><span class="p">){</span> <span class="c1">//Check to see how many neighbours of a particular cell are alive</span>
+    <span class="k">return</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span><span class="p">]</span> <span class="o">+</span> <span class="n">GameBoard</span><span class="p">[</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="kr">inline</span> <span class="kt">char</span> <span class="n">randomRange</span><span class="p">(</span><span class="kt">int</span> <span class="n">min</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max</span><span class="p">){</span> <span class="c1">//Function to generate a random number between min and max</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="p">(</span><span class="n">max</span> <span class="o">-</span> <span class="n">min</span><span class="p">))</span> <span class="o">+</span> <span class="n">min</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">core1_entry</span><span class="p">()</span> <span class="p">{</span> <span class="c1">//The program running on core 1</span>
+    <span class="kt">short</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">;</span> <span class="c1">//The iterators</span>
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//While eternity</span>
+        <span class="k">while</span><span class="p">(</span><span class="n">flag</span><span class="p">);</span> <span class="c1">//Wait here while flag is set</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">8</span><span class="p">);</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For the bottom half of the board</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements from left to right</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span> <span class="c1">//If the element is alive</span>
+                    <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Draw the cell with white</span>
+                <span class="p">}</span>
+                <span class="k">else</span><span class="p">{</span> <span class="c1">//If the element is dead</span>
+                    <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Draw the cell with black</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//Set the flag once done</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="n">main</span><span class="p">(){</span> <span class="c1">//The program running on core 1</span>
+    <span class="kt">short</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">;</span> <span class="c1">//The iterators</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span> <span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+    <span class="n">initVGA</span><span class="p">();</span> <span class="c1">//Initialize the VGA screen and functions</span>
+
+    <span class="n">srand</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span> <span class="c1">//Random seed</span>
+    <span class="c1">//For all the cells, set the cells randomly to either alive or dead</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+            <span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="n">multicore_launch_core1</span><span class="p">(</span><span class="n">core1_entry</span><span class="p">);</span> <span class="c1">//Reset core1 and enter the core1_entry function on core 1 using the default core 1 stack</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//While eternity</span>
+        <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">flag</span><span class="p">);</span> <span class="c1">//Wait here until flag is set</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Generation: %u</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">generation</span><span class="p">);</span> <span class="c1">//Print the current generation</span>
+        <span class="n">generation</span><span class="o">++</span><span class="p">;</span> <span class="c1">//Increment the generation</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For the top half of the board</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements from left to right</span>
+                <span class="kt">char</span> <span class="n">neighbours</span> <span class="o">=</span> <span class="n">checkNeighbours</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">);</span> <span class="c1">//Check the number of neighbours alive for the cell</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span> <span class="c1">//If the current cell is alive</span>
+                    <span class="k">if</span><span class="p">(</span><span class="n">neighbours</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">||</span> <span class="n">neighbours</span> <span class="o">==</span> <span class="mi">3</span><span class="p">){</span> <span class="c1">//If the number of alive neighbours is 2 or 3</span>
+                        <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//The cell lives</span>
+                    <span class="p">}</span>
+                    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+                        <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//The cell dies</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+                <span class="k">else</span><span class="p">{</span> <span class="c1">//If the current cell is dead</span>
+                    <span class="k">if</span><span class="p">(</span><span class="n">neighbours</span> <span class="o">==</span> <span class="mi">3</span><span class="p">){</span> <span class="c1">//If the number of alive neighbours is 3</span>
+                        <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">//The cell comes alive</span>
+                    <span class="p">}</span>
+                    <span class="k">else</span><span class="p">{</span> <span class="c1">//Else</span>
+                        <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//The cell remains dead</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">memcpy</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">,</span> <span class="n">NewBoard</span><span class="p">,</span> <span class="mi">19200</span><span class="p">);</span> <span class="c1">//Copy the new board to the gameboard</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Clear the flag</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">8</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For the top half of the board</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span> <span class="c1">//For all elements from left to right</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span> <span class="c1">//If the element is alive</span>
+                    <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span> <span class="c1">//Draw the cell with white</span>
+                <span class="p">}</span>
+                <span class="k">else</span><span class="p">{</span> <span class="c1">//If the element is dead</span>
+                    <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span> <span class="c1">//Draw the cell with black</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
+<h2 id="Code-Organization">Code Organization<a class="anchor-link" href="#Code-Organization">&#182;</a></h2><p>The code has a <a href="https://vha3.github.io/Pico/VGA/VGA.html">VGA library</a> which has been explained really nicely by Prof. Adams and the main file. Most of the code is self explanatory, however, the main components of the game are explained in the following subsections.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="The-gameboards">The gameboards<a class="anchor-link" href="#The-gameboards">&#182;</a></h4><p>I have initialized two game boards, <code>GameBoard[][]</code> and <code>NewBoard[][]</code>. The <code>GameBoard</code> holds the current state of the life to be drawn while the <code>NewBoard</code> is used to hold the next generation of the game. Once the next generation is figured out, it is overwritten into the old board using <code>memcpy(GameBoard, NewBoard, 19200)</code> where 19200 is the number of bytes to be transferred.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Setting-up-the-board">Setting up the board<a class="anchor-link" href="#Setting-up-the-board">&#182;</a></h4><p>In order to set up the board, I iterated over through all the cells and randomly set them to be either alive or dead. This is the first generation of the board and signifies the initial state of the system.</p>
+<p><em>Note: The generation of the board is pseudo-random. This means that even though it may seem random, it will always initialize in the same state every time the program is reset.</em></p>
+<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">randomRange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h4 id="Rules-of-Game-of-Life">Rules of Game of Life<a class="anchor-link" href="#Rules-of-Game-of-Life">&#182;</a></h4><p>According to <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Wikipedia</a>, the universe of the Game of Life is an infinite, two-dimensional orthogonal grid of square cells, each of which is in one of two possible states, live or dead, (or populated and unpopulated, respectively). Every cell interacts with its eight neighbours, which are the cells that are horizontally, vertically, or diagonally adjacent. At each step in time, the following transitions occur:</p>
 <ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
+<li>Any live cell with fewer than two live neighbours dies, as if by underpopulation.</li>
+<li>Any live cell with two or three live neighbours lives on to the next generation.</li>
+<li>Any live cell with more than three live neighbours dies, as if by overpopulation.</li>
+<li>Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.</li>
 </ul>
-<hr>
+<p>The initial pattern constitutes the seed of the system. The first generation is created by applying the above rules simultaneously to every cell in the seed, live or dead; births and deaths occur simultaneously, and the discrete moment at which this happens is sometimes called a tick. Each generation is a pure function of the preceding one. The rules continue to be applied repeatedly to create further generations.</p>
+<p>I these exact set of rules to calculate the next generation in my implementation.</p>
+<div class="highlight"><pre><span></span><span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="kt">char</span> <span class="n">neighbours</span> <span class="o">=</span> <span class="n">checkNeighbours</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">);</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">neighbours</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">||</span> <span class="n">neighbours</span> <span class="o">==</span> <span class="mi">3</span><span class="p">){</span>
+                <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span><span class="p">{</span>
+                <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">neighbours</span> <span class="o">==</span> <span class="mi">3</span><span class="p">){</span>
+                <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+            <span class="p">}</span>
+            <span class="k">else</span><span class="p">{</span>
+                <span class="n">NewBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
+<h4 id="Drawing-the-boards">Drawing the boards<a class="anchor-link" href="#Drawing-the-boards">&#182;</a></h4><p>Drawing the boards is the most computationally expensive part of the implementation. Drawing the board using just 1 core takes about 1100ms whereas all the other computations take about 81ms. Therefore, I equally divided the task of drawing the board between the two cores.</p>
+<div class="highlight"><pre><span></span><span class="c1">//Core 0</span>
+<span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">8</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">//Core 1</span>
+<span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">8</span><span class="p">);</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">GameBoard</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]){</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">WHITE</span><span class="p">);</span>
+        <span class="p">}</span>
+        <span class="k">else</span><span class="p">{</span>
+            <span class="n">fillRect</span><span class="p">(</span><span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">BLACK</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
 <hr>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-<li><a href="https://parthssharma.github.io/Pico/GPIOInterrupt.html">GPIO Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>Games</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DinoGame.html">Dino Game</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SnakeGame.html">Snake Game</a></li>
-</ul>
-</blockquote>
-<p>Equations</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/SinCosTan.html">Sin Cos Tan</a></li>
-<li><a href="https://parthssharma.github.io/Pico/HeartEquation.html">Heart Equation</a></li>
-</ul>
-</blockquote>
-<p>Fractals</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/CircleFractal.html">Circle Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LineFractal.html">Line Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/TreeFractal.html">Tree Fractal</a></li>
-</ul>
-</blockquote>
-<p>Miscellaneous</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/GameOfLife.html">Conway's Game of Life</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2><p>The video shows the implementation of Conway's Game of Life on the RaspberryPi Pico.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+    <iframe width="560" height="315" src="https://www.youtube.com/embed/B5DRBEpyoE4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen>
+    </iframe>
+</div></p>
+<figure>
+    <center><figcaption>Conway's Game of Life on RaspberryPi Pico</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">GameOfLife-project</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">GameOfLife</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="s">1</span><span class="p">)</span>
+
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/hsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/vsync.pio</span><span class="p">)</span>
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/rgb.pio</span><span class="p">)</span>
+
+<span class="nb">target_sources</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="s">PRIVATE</span> <span class="s">GameOfLife.c</span> <span class="s">vga_graphics.c</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">GameOfLife</span> <span class="s">PRIVATE</span> <span class="s">pico_stdlib</span> <span class="s">hardware_pio</span> <span class="s">hardware_dma</span> <span class="s">hardware_adc</span> <span class="s">hardware_irq</span> <span class="s">pico_time</span> <span class="s">pico_multicore</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">GameOfLife</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
