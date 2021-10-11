@@ -3,7 +3,7 @@
 <head><meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RaspberryPi Pico</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>TFT Library</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 
 
 
@@ -14259,136 +14259,358 @@ a.anchor-link {
 
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h1 id="The-RaspberryPi-Pico">The RaspberryPi Pico<a class="anchor-link" href="#The-RaspberryPi-Pico">&#182;</a></h1><p>As a part of my MEng Project at Cornell University, I have worked intensively with the new <a href="https://www.raspberrypi.org/products/raspberry-pi-pico/">RaspberryPi Pico</a> microcontroller under the guidance of <a href="https://www.engineering.cornell.edu/faculty-directory/hunter-adams">Prof. Van Hunter Adams</a> and <a href="https://www.ece.cornell.edu/faculty-directory/bruce-robert-land">Prof. Bruce Robert Land</a>.</p>
+<h1 id="TFT-Library">TFT Library<a class="anchor-link" href="#TFT-Library">&#182;</a></h1><p>This program was an implementation of the <a href="https://people.ece.cornell.edu/land/courses/ece4760/PIC32/index_TFT_display.html">PIC32 TFT library</a> for the Raspberry Pi Pico. The TFT display is interfaced using SPI. However, I used PIO to create my own SPI channel running at 31.25MHz to send data to the TFT display. The PIO driver code is pretty similar to the <a href="https://parthssharma.github.io/Pico/PIODDS.html">PIO DDS</a> program except for a few modifications which have been addressed in the subsequent sections. The resources for the project include the <a href="https://datasheets.raspberrypi.org/pico/raspberry-pi-pico-c-sdk.pdf">C SDK User Guide</a>, the <a href="https://datasheets.raspberrypi.org/rp2040/rp2040-datasheet.pdf">RP2040 Datasheet</a>, the ECE 4760 <a href="https://people.ece.cornell.edu/land/courses/ece4760/">course website</a> and Prof. Hunter's <a href="https://vha3.github.io/">website</a>.</p>
+<p><strong>Note: The fundamental difference between my program and the program for PIC32 is that instead of transmitting 16-bit words, I am transmitting 2 8-bit words whenever needed.</strong></p>
 <hr>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Introduction">Introduction</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Programming-the-Pico">Programming the Pico</a></li>
-<li><a href="https://parthssharma.github.io/Pico/Pico.html#Progress-along-the-way">Progress along the way</a></li>
-</ul>
-</blockquote>
-<hr>
+<h2 id="The-complete-code">The complete code<a class="anchor-link" href="#The-complete-code">&#182;</a></h2><p>The code uses a state machine to transmit 8 bits at a time using SPI protocol. At the end of each transaction, the state machine sets an interrupt flag that allows the CPU to register that the transaction is complete. Until the transaction is completed, the CPU is stalled by a <code>while()</code> loop.</p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Introduction">Introduction<a class="anchor-link" href="#Introduction">&#182;</a></h2><p>The Raspberry Pi Pico is a tiny, fast, and versatile board built using RP2040, a brand new microcontroller chip designed by Raspberry Pi foundation. It features:</p>
-<ul>
-<li>Dual-core Arm Cortex M0+ processor, flexible clock running up to 133 MHz</li>
-<li>264KB of SRAM, and 2MB of on-board Flash memory</li>
-<li>Low-power sleep and dormant modes</li>
-<li>Drag-and-drop programming using mass storage over USB</li>
-<li>26 × multi-function GPIO pins</li>
-<li>2 × SPI, 2 × I2C, 2 × UART, 3 × 12-bit ADC, 16 × controllable PWM channels</li>
-<li>An on-board temperature sensor</li>
-<li>8 × Programmable I/O (PIO) state machines for custom peripheral support</li>
-<li>Support for C and Python</li>
-</ul>
-<hr>
+<h3 id="TFT_PIO.c">TFT_PIO.c<a class="anchor-link" href="#TFT_PIO.c">&#182;</a></h3><p>This is the driver file which is used to test the created library.</p>
+<div class="highlight"><pre><span></span><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="c1"> //The standard C library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;stdlib.h&gt;</span><span class="c1"> //C stdlib</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/stdlib.h&quot;</span><span class="c1"> //Standard library for Pico</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&lt;math.h&gt;</span><span class="c1"> //The standard math library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/gpio.h&quot;</span><span class="c1"> //The hardware GPIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;pico/time.h&quot;</span><span class="c1"> //The pico time library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/irq.h&quot;</span><span class="c1"> //The hardware interrupt library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pwm.h&quot;</span><span class="c1"> //The hardware PWM library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;hardware/pio.h&quot;</span><span class="c1"> //The hardware PIO library</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&quot;TFTMaster.h&quot;</span><span class="c1"> //The TFT Master library</span><span class="cp"></span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(){</span> <span class="c1">//The program running on core 0</span>
+    <span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">;</span> <span class="c1">//The insex variables</span>
+    <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">col</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="c1">//Variables to store current colour and count</span>
+    <span class="n">stdio_init_all</span><span class="p">();</span> <span class="c1">//Initialize all of the present standard stdio types that are linked into the binary</span>
+    <span class="n">tft_init_hw</span><span class="p">();</span> <span class="c1">//Initialize the hardware for the TFT</span>
+    <span class="n">tft_begin</span><span class="p">();</span> <span class="c1">//Initialize the TFT</span>
+    <span class="n">tft_setRotation</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">//Set TFT rotation</span>
+    <span class="n">tft_fillScreen</span><span class="p">(</span><span class="n">ILI9340_BLACK</span><span class="p">);</span> <span class="c1">//Fill the entire screen with black colour</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">){</span> <span class="c1">//Infinite while loop</span>
+        <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">begin_time</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">);</span> <span class="c1">//Get the start time</span>
+        <span class="k">switch</span><span class="p">(</span><span class="n">count</span><span class="p">){</span> <span class="c1">//Based on the current count, switch different colours</span>
+            <span class="k">case</span> <span class="mi">0</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_BLUE</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">1</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_RED</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">2</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_GREEN</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">3</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_CYAN</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">4</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_MAGENTA</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">5</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_YELLOW</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+            <span class="k">case</span> <span class="mi">6</span><span class="o">:</span> <span class="n">col</span> <span class="o">=</span> <span class="n">ILI9340_WHITE</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">ILI9340_TFTWIDTH</span> <span class="o">/</span> <span class="mi">4</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">){</span>
+            <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">ILI9340_TFTHEIGHT</span> <span class="o">/</span> <span class="mi">4</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">){</span>
+                <span class="c1">//tft_drawRect(i &lt;&lt; 2, j &lt;&lt; 2, 4, 4, col); //Simply drawing a rectangle takes 222 ms</span>
+                <span class="n">tft_fillRect</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="n">j</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">col</span><span class="p">);</span> <span class="c1">//Filling the entire rectangle surprisingly takes 110 ms</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">7</span><span class="p">;</span> <span class="c1">//Increment the count and keep it between 0-6</span>
+        <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">exTime</span> <span class="o">=</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)(</span><span class="n">get_absolute_time</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-</span> <span class="n">begin_time</span><span class="p">);</span> <span class="c1">//Calculate the amount of time taken</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%u</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">exTime</span><span class="p">);</span> <span class="c1">//Print the time out</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Programming-the-Pico">Programming the Pico<a class="anchor-link" href="#Programming-the-Pico">&#182;</a></h2><p>The Raspberry Pi Pico can be programmed using <strong>C</strong> as well as the <strong>Python</strong> programming language. I chose to program using C because of the following reasons:</p>
-<ol>
-<li>A C program is compiled, and is thus faster than Python.</li>
-<li>I have more experience working with C and is therefore more comfortable for me.</li>
-</ol>
-<hr>
+<h3 id="SPIPIO.pio">SPIPIO.pio<a class="anchor-link" href="#SPIPIO.pio">&#182;</a></h3><p>This is the driver code for the PIO state machine and can be downloaded <a href="https://parthssharma.github.io/Pico/Files/SPIPIO.pio">here</a>. The SPI transaction has been explained in detail <a href="https://parthssharma.github.io/Pico/PIODDS.html">here</a>.</p>
+<div class="highlight"><pre><span></span><span class="na">.program</span> <span class="no">spi_cpha0_cs</span> <span class="c1">;Program name</span>
+<span class="na">.side_set</span> <span class="mi">1</span> <span class="c1">;Set 1 pin for sideset</span>
+
+<span class="c1">; Drive SPI</span>
+<span class="c1">; Pin assignments:</span>
+<span class="c1">; - SCK is side-set bit 0</span>
+<span class="c1">; - MOSI is OUT bit 0 (host-to-device)</span>
+
+<span class="na">.wrap_target</span> <span class="c1">;Free 0 cycle unconditional jump</span>
+<span class="nl">bitloop:</span> <span class="c1">;Bitloop label</span>
+<span class="nf">public</span> <span class="no">entry_point</span><span class="p">:</span> <span class="c1">;The entry point for the program</span>
+    <span class="nf">out</span> <span class="no">pins</span><span class="p">,</span> <span class="mi">1</span>        <span class="no">side</span> <span class="mi">0x0</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1">;Output the bit on pin, sideset the clock</span>
+    <span class="nf">jmp</span> <span class="no">x--</span> <span class="no">bitloop</span>    <span class="no">side</span> <span class="mi">0x1</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1">;Jump to bitloop if bit counter still available</span>
+
+    <span class="nf">out</span> <span class="no">pins</span><span class="p">,</span> <span class="mi">1</span>        <span class="no">side</span> <span class="mi">0x0</span> <span class="c1">;Output the bit on pin, sideset the clock</span>
+    <span class="nf">mov</span> <span class="no">x</span><span class="p">,</span> <span class="no">y</span>           <span class="no">side</span> <span class="mi">0x0</span>     <span class="c1">;Reload bit counter from Y</span>
+    <span class="nf">jmp</span> <span class="p">!</span><span class="no">osre</span> <span class="no">bitloop</span>  <span class="no">side</span> <span class="mi">0x1</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1">;Fall-through if TXF empties</span>
+
+    <span class="nf">irq</span> <span class="mi">0</span>              <span class="no">side</span> <span class="mi">0x0</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="c1">;Set IRQ 0 flag</span>
+<span class="na">.wrap</span>
+
+<span class="c1">;Helper function</span>
+
+<span class="err">%</span> <span class="nf">c-sdk</span> <span class="err">{</span>
+<span class="c1">#include &quot;hardware/gpio.h&quot; //The hardware GPIO library</span>
+<span class="nf">static</span> <span class="no">inline</span> <span class="no">void</span> <span class="no">pio_spi_cs_init</span><span class="p">(</span><span class="no">PIO</span> <span class="no">pio</span><span class="p">,</span> <span class="no">uint</span> <span class="no">sm</span><span class="p">,</span> <span class="no">uint</span> <span class="no">prog_offs</span><span class="p">,</span> <span class="no">uint</span> <span class="no">n_bits</span><span class="p">,</span> <span class="no">int</span> <span class="no">clkdiv</span><span class="p">,</span> <span class="no">bool</span> <span class="no">cpha</span><span class="p">,</span> <span class="no">bool</span> <span class="no">cpol</span><span class="p">,</span> <span class="no">uint</span> <span class="no">pin_sck</span><span class="p">,</span> <span class="no">uint</span> <span class="no">pin_mosi</span><span class="p">)</span><span class="err">{</span> <span class="c1">//The PIO SPI initialize functions</span>
+    <span class="nf">pio_sm_config</span> <span class="no">c</span> <span class="err">=</span> <span class="no">spi_cpha0_cs_program_get_default_config</span><span class="p">(</span><span class="no">prog_offs</span><span class="p">)</span><span class="c1">; //Get default configurations for the PIO state machine</span>
+    <span class="nf">sm_config_set_out_pins</span><span class="p">(</span><span class="err">&amp;</span><span class="no">c</span><span class="p">,</span> <span class="no">pin_mosi</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="c1">; //Set the &#39;out&#39; pins in a state machine configuration</span>
+    <span class="nf">sm_config_set_sideset_pins</span><span class="p">(</span><span class="err">&amp;</span><span class="no">c</span><span class="p">,</span> <span class="no">pin_sck</span><span class="p">)</span><span class="c1">; //Set the &#39;sideset&#39; pins in a state machine configuration</span>
+    <span class="nf">sm_config_set_out_shift</span><span class="p">(</span><span class="err">&amp;</span><span class="no">c</span><span class="p">,</span> <span class="no">false</span><span class="p">,</span> <span class="no">true</span><span class="p">,</span> <span class="no">n_bits</span><span class="p">)</span><span class="c1">; //Setup &#39;out&#39; shifting parameters in a state machine configuration</span>
+    <span class="nf">sm_config_set_clkdiv</span><span class="p">(</span><span class="err">&amp;</span><span class="no">c</span><span class="p">,</span> <span class="no">clkdiv</span><span class="p">)</span><span class="c1">; //Set the state machine clock divider</span>
+
+    <span class="nf">pio_sm_set_pins_with_mask</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_sck</span><span class="p">)</span> <span class="err">|</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_mosi</span><span class="p">))</span><span class="c1">; //Use a state machine to set a value on multiple pins for the PIO instance</span>
+    <span class="nf">pio_sm_set_pindirs_with_mask</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_sck</span><span class="p">)</span> <span class="err">|</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_mosi</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_sck</span><span class="p">)</span> <span class="err">|</span> <span class="p">(</span><span class="mi">1</span><span class="no">u</span> <span class="err">&lt;&lt;</span> <span class="no">pin_mosi</span><span class="p">))</span><span class="c1">; //Use a state machine to set the pin directions for multiple pins for the PIO instance</span>
+    <span class="nf">pio_gpio_init</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">pin_mosi</span><span class="p">)</span><span class="c1">; //Setup the function select for a GPIO to use output from the given PIO instance</span>
+    <span class="nf">pio_gpio_init</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">pin_sck</span><span class="p">)</span><span class="c1">; //Setup the function select for a GPIO to use output from the given PIO instance</span>
+    <span class="c1">//pio_gpio_init(pio, pin_sck + 1); //Setup the function select for a GPIO to use output from the given PIO instance</span>
+    <span class="nf">gpio_set_outover</span><span class="p">(</span><span class="no">pin_sck</span><span class="p">,</span> <span class="no">cpol</span> <span class="err">?</span> <span class="no">GPIO_OVERRIDE_INVERT</span> <span class="p">:</span> <span class="no">GPIO_OVERRIDE_NORMAL</span><span class="p">)</span><span class="c1">; //Set GPIO output override</span>
+
+
+    <span class="nf">uint</span> <span class="no">entry_point</span> <span class="err">=</span> <span class="no">prog_offs</span> <span class="err">+</span> <span class="no">spi_cpha0_cs_offset_entry_point</span><span class="c1">; //The offset entry point</span>
+    <span class="nf">pio_sm_init</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="no">entry_point</span><span class="p">,</span> <span class="err">&amp;</span><span class="no">c</span><span class="p">)</span><span class="c1">; //Resets the state machine to a consistent state, and configures it</span>
+    <span class="nf">pio_sm_exec</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="no">pio_encode_set</span><span class="p">(</span><span class="no">pio_x</span><span class="p">,</span> <span class="no">n_bits</span> <span class="p">-</span> <span class="mi">2</span><span class="p">))</span><span class="c1">; //Put n_bits - 2 in pio_x</span>
+    <span class="nf">pio_sm_exec</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="no">pio_encode_set</span><span class="p">(</span><span class="no">pio_y</span><span class="p">,</span> <span class="no">n_bits</span> <span class="p">-</span> <span class="mi">2</span><span class="p">))</span><span class="c1">; //Put n_bits - 2 in pio_y</span>
+    <span class="nf">pio_sm_set_enabled</span><span class="p">(</span><span class="no">pio</span><span class="p">,</span> <span class="no">sm</span><span class="p">,</span> <span class="no">true</span><span class="p">)</span><span class="c1">; //Enable or disable a PIO state machine</span>
+<span class="err">}</span>
+<span class="err">%}</span>
+</pre></div>
+<p><br></p>
 
 </div>
 </div>
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
-<h2 id="Progress-along-the-way">Progress along the way<a class="anchor-link" href="#Progress-along-the-way">&#182;</a></h2><p>In order to keep track of my progress along the way, I have documented what I did along the way.</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/Setup.html">Setting up the Raspberry Pi Pico for C/C++ Development on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/CreateProject.html">Creating a new C/C++ Raspberry Pi Pico Project on Windows</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SDKArchitecture.html">Understanding the C/C++ SDK architecture for the Raspberry Pi Pico</a></li>
-</ul>
-<p>Over the course of the project, I covered the following topics (not necessarily in the order).</p>
-<blockquote><p>Basic GPIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/LEDBlink.html">LED Blink (Hello World)</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LEDPWM.html">LED PWM</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInput.html">ADC Input</a></li>
-<li><a href="https://parthssharma.github.io/Pico/ADCInputUART.html">ADC Input UART</a></li>
-<li><a href="https://parthssharma.github.io/Pico/GPIOInterrupt.html">GPIO Interrupt</a></li>
-</ul>
-</blockquote>
-<p>Timer</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TimerBasic.html">Timer Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>Multi Core</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreBasic.html">Multi Core Basic</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCorePerformanceCompare.html">Multi Core Performance Compare</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContention.html">Multi Core Contention</a></li>
-<li><a href="https://parthssharma.github.io/Pico/MultiCoreContentionPrevention.html">Multi Core Contention Prevention</a></li>
-</ul>
-</blockquote>
-<p>SPI</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DDSInterrupt.html">Direct Digital Synthesis using SPI and Interrupt</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>PIO</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloPIO.html">Hello PIO</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIOSquareWave.html">Square Wave Generation</a></li>
-<li><a href="https://parthssharma.github.io/Pico/PIODDS.html">Direct Digital Synthesis using PIO</a></li>
-</ul>
-</blockquote>
-<p>DMA</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/HelloDMA.html">Hello DMA</a></li>
-<li><a href="https://parthssharma.github.io/Pico/DMASineWave.html">Generating Sine wave using DMA</a></li>
-</ul>
-</blockquote>
-<p>Games</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/DinoGame.html">Dino Game</a></li>
-<li><a href="https://parthssharma.github.io/Pico/SnakeGame.html">Snake Game</a></li>
-</ul>
-</blockquote>
-<p>Equations</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/SinCosTan.html">Sin Cos Tan</a></li>
-<li><a href="https://parthssharma.github.io/Pico/HeartEquation.html">Heart Equation</a></li>
-</ul>
-</blockquote>
-<p>Fractals</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/CircleFractal.html">Circle Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/LineFractal.html">Line Fractal</a></li>
-<li><a href="https://parthssharma.github.io/Pico/TreeFractal.html">Tree Fractal</a></li>
-</ul>
-</blockquote>
-<p>Miscellaneous</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/GameOfLife.html">Conway's Game of Life</a></li>
-</ul>
-</blockquote>
-<p>TFT Library</p>
-<blockquote><ul>
-<li><a href="https://parthssharma.github.io/Pico/TFTLibrary.html">TFT Library Creation</a></li>
-</ul>
-</blockquote>
-</blockquote>
-</blockquote>
+<h3 id="TFTMaster.h">TFTMaster.h<a class="anchor-link" href="#TFTMaster.h">&#182;</a></h3><p>This is the header file for the TFT and can be downloaded <a href="https://parthssharma.github.io/Pico/Files/TFTMaster.h">here</a>. Its associated .c file can be downoaded <a href="https://parthssharma.github.io/Pico/Files/TFTMaster.c">here</a>.</p>
+<div class="highlight"><pre><span></span><span class="cp">#define CS 18</span>
+<span class="cp">#define MOSI 19</span>
+<span class="cp">#define SCK 17</span>
+<span class="cp">#define DC 16</span>
+<span class="cp">#define RST 20</span>
+
+<span class="cp">#define ILI9340_TFTWIDTH  240</span>
+<span class="cp">#define ILI9340_TFTHEIGHT 320</span>
+
+<span class="cp">#define ILI9340_NOP     0x00</span>
+<span class="cp">#define ILI9340_SWRESET 0x01</span>
+<span class="cp">#define ILI9340_RDDID   0x04</span>
+<span class="cp">#define ILI9340_RDDST   0x09</span>
+
+<span class="cp">#define ILI9340_SLPIN   0x10</span>
+<span class="cp">#define ILI9340_SLPOUT  0x11</span>
+<span class="cp">#define ILI9340_PTLON   0x12</span>
+<span class="cp">#define ILI9340_NORON   0x13</span>
+
+<span class="cp">#define ILI9340_RDMODE  0x0A</span>
+<span class="cp">#define ILI9340_RDMADCTL  0x0B</span>
+<span class="cp">#define ILI9340_RDPIXFMT  0x0C</span>
+<span class="cp">#define ILI9340_RDIMGFMT  0x0A</span>
+<span class="cp">#define ILI9340_RDSELFDIAG  0x0F</span>
+
+<span class="cp">#define ILI9340_INVOFF  0x20</span>
+<span class="cp">#define ILI9340_INVON   0x21</span>
+<span class="cp">#define ILI9340_GAMMASET 0x26</span>
+<span class="cp">#define ILI9340_DISPOFF 0x28</span>
+<span class="cp">#define ILI9340_DISPON  0x29</span>
+
+<span class="cp">#define ILI9340_CASET   0x2A</span>
+<span class="cp">#define ILI9340_PASET   0x2B</span>
+<span class="cp">#define ILI9340_RAMWR   0x2C</span>
+<span class="cp">#define ILI9340_RAMRD   0x2E</span>
+
+<span class="cp">#define ILI9340_PTLAR   0x30</span>
+<span class="cp">#define ILI9340_MADCTL  0x36</span>
+
+<span class="cp">#define ILI9340_MADCTL_MY  0x80</span>
+<span class="cp">#define ILI9340_MADCTL_MX  0x40</span>
+<span class="cp">#define ILI9340_MADCTL_MV  0x20</span>
+<span class="cp">#define ILI9340_MADCTL_ML  0x10</span>
+<span class="cp">#define ILI9340_MADCTL_RGB 0x00</span>
+<span class="cp">#define ILI9340_MADCTL_BGR 0x08</span>
+<span class="cp">#define ILI9340_MADCTL_MH  0x04</span>
+
+<span class="cp">#define ILI9340_PIXFMT  0x3A</span>
+
+<span class="cp">#define ILI9340_FRMCTR1 0xB1</span>
+<span class="cp">#define ILI9340_FRMCTR2 0xB2</span>
+<span class="cp">#define ILI9340_FRMCTR3 0xB3</span>
+<span class="cp">#define ILI9340_INVCTR  0xB4</span>
+<span class="cp">#define ILI9340_DFUNCTR 0xB6</span>
+
+<span class="cp">#define ILI9340_PWCTR1  0xC0</span>
+<span class="cp">#define ILI9340_PWCTR2  0xC1</span>
+<span class="cp">#define ILI9340_PWCTR3  0xC2</span>
+<span class="cp">#define ILI9340_PWCTR4  0xC3</span>
+<span class="cp">#define ILI9340_PWCTR5  0xC4</span>
+<span class="cp">#define ILI9340_VMCTR1  0xC5</span>
+<span class="cp">#define ILI9340_VMCTR2  0xC7</span>
+
+<span class="cp">#define ILI9340_RDID1   0xDA</span>
+<span class="cp">#define ILI9340_RDID2   0xDB</span>
+<span class="cp">#define ILI9340_RDID3   0xDC</span>
+<span class="cp">#define ILI9340_RDID4   0xDD</span>
+
+<span class="cp">#define ILI9340_GMCTRP1 0xE0</span>
+<span class="cp">#define ILI9340_GMCTRN1 0xE1</span>
+
+<span class="cp">#define ILI9340_PWCTR6  0xFC</span>
+
+<span class="c1">//Color definitions</span>
+<span class="cp">#define ILI9340_BLACK   0x0000</span>
+<span class="cp">#define ILI9340_BLUE    0x001F</span>
+<span class="cp">#define ILI9340_RED     0xF800</span>
+<span class="cp">#define ILI9340_GREEN   0x07E0</span>
+<span class="cp">#define ILI9340_CYAN    0x07FF</span>
+<span class="cp">#define ILI9340_MAGENTA 0xF81F</span>
+<span class="cp">#define ILI9340_YELLOW  0xFFE0</span>
+<span class="cp">#define ILI9340_WHITE   0xFFFF</span>
+
+<span class="cp">#define tabspace 4</span>
+
+<span class="cp">#define swap(a, b) {short t = a; a = b; b = t;}</span>
+
+<span class="kt">void</span> <span class="nf">tft_init_hw</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_spiwrite</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_spiwrite8</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_spiwrite16</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_writecommand</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_writecommand16</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_writedata</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_writedata16</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_commandList</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">addr</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_begin</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setAddrWindow</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">x1</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">y1</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_pushColor</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawPixel</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawFastVLine</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawFastHLine</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillScreen</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillRect</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">tft_Color565</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">r</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">g</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">b</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setRotation</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">m</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawLine</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">x1</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y1</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawRect</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawCircle</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">r</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawCircleHelper</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">r</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">cornername</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillCircle</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">r</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillCircleHelper</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">r</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">cornername</span><span class="p">,</span> <span class="kt">short</span> <span class="n">delta</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawTriangle</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">x1</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y1</span><span class="p">,</span> <span class="kt">short</span> <span class="n">x2</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y2</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillTriangle</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">x1</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y1</span><span class="p">,</span> <span class="kt">short</span> <span class="n">x2</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y2</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawRoundRect</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">short</span> <span class="n">radius</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_fillRoundRect</span><span class="p">(</span><span class="kt">short</span> <span class="n">x0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y0</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">short</span> <span class="n">radius</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawBitmap</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">bitmap</span><span class="p">,</span> <span class="kt">short</span> <span class="n">w</span><span class="p">,</span> <span class="kt">short</span> <span class="n">h</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_drawChar</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">color</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">bg</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">size</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setCursor</span><span class="p">(</span><span class="kt">short</span> <span class="n">x</span><span class="p">,</span> <span class="kt">short</span> <span class="n">y</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setTextColor</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setTextColor2</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">c</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">bg</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setTextSize</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">s</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_setTextWrap</span><span class="p">(</span><span class="kt">char</span> <span class="n">w</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_gfx_setRotation</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">r</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_write</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">c</span><span class="p">);</span>
+<span class="kt">void</span> <span class="nf">tft_writeString</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">str</span><span class="p">);</span>
+</pre></div>
+<hr>
+<p><br></p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="The-output">The output<a class="anchor-link" href="#The-output">&#182;</a></h2><p>The output below shows output of the rectangle test program. As it is evident, the screen is constantly being redrawn with rectangles of different colours.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/TFTTestRectangle.jpg" style="width: 450px; height: 317px;" >
+</div></p>
+<figure>
+    <center><figcaption>Testing the TFT Library with rectangles</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Next, I created a program to test the dino game I created <a href="https://parthssharma.github.io/Pico/DinoGame.html">here</a> for the TFT screen. The output of the program looks as follows.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/DinoOutput.jpg" style="width: 500px; height: 352px;" >
+</div></p>
+<figure>
+    <center><figcaption>Testing the TFT Library with Dino game</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>After the dino game, I tested the bouncing ball code from the ECE 4760 <a href="https://people.ece.cornell.edu/land/courses/ece4760/PIC32/Target_board/version_1_3_2/TFT_animation_Accum_BRL4.c">website</a> and its output is shown below.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/BouncingBallOutput.jpg" style="width: 500px; height: 300px;" >
+</div></p>
+<figure>
+    <center><figcaption>Testing the TFT Library with bouncing ball code</figcaption></center>
+</figure>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>Finally, I implemented the boids algorithm from the ECE 4760 wesbite. For the purpose of preserving the integrity of the course assignment, I cannot reveal my code but the <a href="https://people.ece.cornell.edu/land/courses/ece4760/labs/f2021/lab2boids/Boids.zip">link</a> has the algorithm associated with it. The program running on a single core can run support roughly 250 boids while the program running on 2 cores can support roughly 315 boids.</p>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><div style="display: flex; justify-content: center;">
+  <img src="https://parthssharma.github.io/Pico/Files/BoidsOutput.jpg" style="width: 450px; height: 358px;" >
+</div></p>
+<figure>
+    <center><figcaption>Testing the TFT Library with boids algorithm</figcaption></center>
+</figure><hr>
+
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<h2 id="CMakeLists.txt">CMakeLists.txt<a class="anchor-link" href="#CMakeLists.txt">&#182;</a></h2>
+</div>
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="p">(</span><span class="s">VERSION</span> <span class="s">3.13</span><span class="p">)</span>
+
+<span class="nb">include</span><span class="p">(</span><span class="s">pico_sdk_import.cmake</span><span class="p">)</span>
+
+<span class="nb">project</span><span class="p">(</span><span class="s">TFT_PIO-project</span><span class="p">)</span>
+
+<span class="nb">pico_sdk_init</span><span class="p">()</span>
+
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">TFT_PIO</span><span class="p">)</span>
+
+<span class="nb">pico_enable_stdio_usb</span><span class="p">(</span><span class="s">TFT_PIO</span> <span class="s">1</span><span class="p">)</span>
+<span class="nb">pico_enable_stdio_uart</span><span class="p">(</span><span class="s">TFT_PIO</span> <span class="s">0</span><span class="p">)</span>
+
+<span class="nb">pico_generate_pio_header</span><span class="p">(</span><span class="s">TFT_PIO</span> <span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/SPIPIO.pio</span><span class="p">)</span>
+
+<span class="nb">target_sources</span><span class="p">(</span><span class="s">TFT_PIO</span> <span class="s">PRIVATE</span> <span class="s">TFT_PIO.c</span> <span class="s">TFTMaster.c</span> <span class="s">glcdfont.c</span><span class="p">)</span>
+
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">TFT_PIO</span> <span class="s">PRIVATE</span> <span class="s">pico_stdlib</span> <span class="s">hardware_gpio</span> <span class="s">pico_time</span> <span class="s">hardware_pio</span> <span class="s">hardware_pwm</span> <span class="s">hardware_irq</span><span class="p">)</span>
+
+<span class="nb">pico_add_extra_outputs</span><span class="p">(</span><span class="s">TFT_PIO</span><span class="p">)</span>
+</pre></div>
 <hr>
 
 </div>
